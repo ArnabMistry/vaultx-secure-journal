@@ -20,6 +20,7 @@ export async function loadEntries() {
     return [];
   }
 }
+
 export async function saveEntries(entries) {
   try {
     await AsyncStorage.setItem(ASYNC_ENTRIES_KEY, JSON.stringify(entries));
@@ -29,10 +30,42 @@ export async function saveEntries(entries) {
     return false;
   }
 }
+
 export async function appendEntry(entry) {
   const entries = await loadEntries();
   entries.unshift(entry);
   await saveEntries(entries);
+}
+
+export async function getEntry(id) {
+  try {
+    const entries = await loadEntries();
+    return entries.find(entry => entry.id === id) || null;
+  } catch (e) {
+    console.warn("getEntry error", e);
+    return null;
+  }
+}
+
+export async function updateEntry(id, updatedEntry) {
+  try {
+    const entries = await loadEntries();
+    const index = entries.findIndex(entry => entry.id === id);
+    if (index !== -1) {
+      entries[index] = { ...entries[index], ...updatedEntry };
+      await saveEntries(entries);
+    }
+  } catch (error) {
+    console.error("updateEntry error", error);
+  }
+}
+
+export async function clearAllEntries() {
+  try {
+    await AsyncStorage.removeItem(ASYNC_ENTRIES_KEY);
+  } catch (error) {
+    console.error("clearAllEntries error", error);
+  }
 }
 
 export async function loadTamperLog() {
@@ -43,6 +76,7 @@ export async function loadTamperLog() {
     return [];
   }
 }
+
 export async function appendTamperLog(eventObj) {
   const log = await loadTamperLog();
   log.unshift(eventObj);
@@ -53,6 +87,29 @@ export async function appendTamperLog(eventObj) {
   }
 }
 
+// storage.js
+
+export async function storageGetMeta(key) {
+    try {
+      const value = await AsyncStorage.getItem(key + "_meta");
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      console.error("Error getting meta:", error);
+      return null;
+    }
+  }
+  
+  export async function saveTamperLog(logData) {
+    try {
+      const existingLogs = await AsyncStorage.getItem("tamperLogs");
+      let logs = existingLogs ? JSON.parse(existingLogs) : [];
+      logs.push({ ...logData, timestamp: Date.now() });
+      await AsyncStorage.setItem("tamperLogs", JSON.stringify(logs));
+    } catch (error) {
+      console.error("Error saving tamper log:", error);
+    }
+  }
+  
 export async function clearAllVaultStorage() {
   // Remove async keys and secure keys
   await AsyncStorage.removeItem(ASYNC_ENTRIES_KEY);

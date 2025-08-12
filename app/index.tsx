@@ -1,4 +1,4 @@
-// src/index.tsx
+// app/index.tsx
 import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import * as ScreenCapture from "expo-screen-capture";
@@ -25,57 +26,53 @@ import PanicModal from "../src/components/PanicModal";
 import AuditModal from "../src/components/AuditModal";
 import EntryCard from "../src/components/EntryCard";
 
-
 const PBKDF2_ITERATIONS = 100000;
 
-// Define types for entry and tamper log items
-interface Entry {
+// Minimal TS types (storage.js & crypto.js are JS files you said you already have)
+type VaultMeta = { biometricEnabled: boolean };
+type Entry = {
   id: string;
   iv: string;
   ciphertext: string;
   hmac: string;
   timestamp: string;
-}
+  [k: string]: any;
+};
+type TamperLogItem = { ts: string; event: string; detail?: string; id?: string };
 
-interface TamperLogItem {
-  ts: string;
-  event: string;
-  detail?: string;
-  id?: string;
-}
-
-export default function App() {
+export default function App(): JSX.Element {
   // vault state
   const [initialized, setInitialized] = useState<boolean | null>(null);
-  const [locked, setLocked] = useState(true);
+  const [locked, setLocked] = useState<boolean>(true);
   const [masterKeyHex, setMasterKeyHex] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [tamperLog, setTamperLog] = useState<TamperLogItem[]>([]);
   const [lastVerifiedAt, setLastVerifiedAt] = useState<string | null>(null);
-  const [vaultMeta, setVaultMeta] = useState<{ biometricEnabled: boolean }>({ biometricEnabled: false });
+  const [vaultMeta, setVaultMeta] = useState<VaultMeta>({ biometricEnabled: false });
 
   const [setupPassA, setSetupPassA] = useState<string>("");
   const [setupPassB, setSetupPassB] = useState<string>("");
   const [unlockPass, setUnlockPass] = useState<string>("");
   const [newEntryText, setNewEntryText] = useState<string>("");
   const [viewingEntryPlain, setViewingEntryPlain] = useState<{ id: string; text: string } | null>(null);
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [showAudit, setShowAudit] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [showNewModal, setShowNewModal] = useState<boolean>(false);
+  const [showAudit, setShowAudit] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [integrityStatus, setIntegrityStatus] = useState<string>("Unknown");
 
   // panic modal states
-  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
+  const [showPanicConfirm, setShowPanicConfirm] = useState<boolean>(false);
   const [panicConfirmText, setPanicConfirmText] = useState<string>("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const wrapped = await SecureStore.getItemAsync(storage.SECUREKEY_WRAPPED);
-        const salt = await SecureStore.getItemAsync(storage.SECUREKEY_SALT);
-        const iter = await SecureStore.getItemAsync(storage.SECUREKEY_ITER);
-        const metaJson = await storage.storageGetMeta();
+        const wrapped = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
+        const salt = await SecureStore.getItemAsync((storage as any).SECUREKEY_SALT);
+        const iter = await SecureStore.getItemAsync((storage as any).SECUREKEY_ITER);
+        // storage.storageGetMeta may be an async function in your storage.js
+        const metaJson = await (storage as any).storageGetMeta?.();
         const meta = metaJson ? metaJson : { biometricEnabled: false };
         setVaultMeta(meta);
 
@@ -93,6 +90,7 @@ export default function App() {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Prevent screenshots when unlocked, allow when locked
@@ -107,22 +105,24 @@ export default function App() {
       } else {
         try {
           await ScreenCapture.allowScreenCaptureAsync();
-        } catch (e) {}
+        } catch (e) {
+          // ignore
+        }
       }
     })();
   }, [locked]);
 
-  async function refreshData() {
-    const e = await storage.loadEntries();
-    setEntries(e);
-    const t = await storage.loadTamperLog();
-    setTamperLog(t);
+  async function refreshData(): Promise<void> {
+    const e = await (storage as any).loadEntries();
+    setEntries(e || []);
+    const t = await (storage as any).loadTamperLog();
+    setTamperLog(t || []);
   }
 
   /* ---------------------------
      Setup: create vault
   --------------------------- */
-  async function handleCreateVault() {
+  async function handleCreateVault(): Promise<void> {
     if (!setupPassA || setupPassA !== setupPassB) {
       Alert.alert("Passphrase mismatch", "Ensure passphrase and confirmation match.");
       return;
@@ -133,24 +133,26 @@ export default function App() {
     }
     setLoading(true);
     try {
-      const masterHex = await crypto.randomHex(32);
-      const saltHex = await crypto.randomHex(16);
-      const wrapIvHex = await crypto.randomHex(16);
+      // master key (256-bit)
+      const masterHex = await (crypto as any).randomHex(32);
+      const saltHex = await (crypto as any).randomHex(16);
+      const wrapIvHex = await (crypto as any).randomHex(16);
 
-      const wrapKeyWA = crypto.deriveKeyPBKDF2(setupPassA, saltHex, PBKDF2_ITERATIONS);
+      const wrapKeyWA = (crypto as any).deriveKeyPBKDF2(setupPassA, saltHex, PBKDF2_ITERATIONS);
 
-      const wrapped = crypto.wrapMasterKey(masterHex, wrapKeyWA, wrapIvHex);
+      const wrapped = (crypto as any).wrapMasterKey(masterHex, wrapKeyWA, wrapIvHex);
 
-      await SecureStore.setItemAsync(storage.SECUREKEY_WRAPPED, JSON.stringify({ wrapped, wrapIvHex }));
-      await SecureStore.setItemAsync(storage.SECUREKEY_SALT, saltHex);
-      await SecureStore.setItemAsync(storage.SECUREKEY_ITER, PBKDF2_ITERATIONS.toString());
-      await SecureStore.setItemAsync(storage.SECUREKEY_CREATED, new Date().toISOString());
+      await SecureStore.setItemAsync((storage as any).SECUREKEY_WRAPPED, JSON.stringify({ wrapped, wrapIvHex }));
+      await SecureStore.setItemAsync((storage as any).SECUREKEY_SALT, saltHex);
+      await SecureStore.setItemAsync((storage as any).SECUREKEY_ITER, PBKDF2_ITERATIONS.toString());
+      await SecureStore.setItemAsync((storage as any).SECUREKEY_CREATED, new Date().toISOString());
 
-      await storage.saveEntries([]);
-      await storage.saveTamperLog([]); // changed from AsyncStorage to storage api
-      await storage.saveMeta({ biometricEnabled: false });
+      // initialize AsyncStorage with empty arrays
+      await (storage as any).saveEntries([]);
+      await AsyncStorage.setItem((storage as any).ASYNC_TAMPERLOG_KEY, JSON.stringify([]));
+      await AsyncStorage.setItem((storage as any).ASYNC_META_KEY, JSON.stringify({ biometricEnabled: false }));
 
-      await storage.appendTamperLog({ ts: new Date().toISOString(), event: "vault_created" });
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "vault_created" });
 
       setInitialized(true);
       setLocked(true);
@@ -169,12 +171,12 @@ export default function App() {
   /* ---------------------------
      Unlock
   --------------------------- */
-  async function handleUnlock() {
+  async function handleUnlock(): Promise<void> {
     setLoading(true);
     try {
-      const wrappedObjStr = await SecureStore.getItemAsync(storage.SECUREKEY_WRAPPED);
-      const saltHex = await SecureStore.getItemAsync(storage.SECUREKEY_SALT);
-      const iterStr = await SecureStore.getItemAsync(storage.SECUREKEY_ITER);
+      const wrappedObjStr = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
+      const saltHex = await SecureStore.getItemAsync((storage as any).SECUREKEY_SALT);
+      const iterStr = await SecureStore.getItemAsync((storage as any).SECUREKEY_ITER);
       if (!wrappedObjStr || !saltHex || !iterStr) {
         Alert.alert("Vault not initialized", "No vault data found.");
         setLoading(false);
@@ -184,10 +186,10 @@ export default function App() {
       const wrappedObj = JSON.parse(wrappedObjStr);
       const { wrapped, wrapIvHex } = wrappedObj;
 
-      const metaJson = await storage.storageGetMeta();
-      const meta = metaJson ? metaJson : { biometricEnabled: false };
+      // biometric gating (optional)
+      const metaJson = await AsyncStorage.getItem((storage as any).ASYNC_META_KEY);
+      const meta = metaJson ? JSON.parse(metaJson) : { biometricEnabled: false };
       setVaultMeta(meta);
-
       if (meta.biometricEnabled) {
         const has = await LocalAuthentication.hasHardwareAsync();
         if (has) {
@@ -200,13 +202,13 @@ export default function App() {
         }
       }
 
-      const wrapKeyWA = crypto.deriveKeyPBKDF2(unlockPass, saltHex, iter);
+      const wrapKeyWA = (crypto as any).deriveKeyPBKDF2(unlockPass, saltHex, iter);
       let masterHex: string;
       try {
-        masterHex = crypto.unwrapMasterKey(wrapped, wrapKeyWA, wrapIvHex);
+        masterHex = (crypto as any).unwrapMasterKey(wrapped, wrapKeyWA, wrapIvHex);
         if (!masterHex || masterHex.length !== 64) throw new Error("Master key length mismatch");
       } catch (e) {
-        await storage.appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "wrong_passphrase" });
+        await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "wrong_passphrase" });
         Alert.alert("Unlock failed", "Incorrect passphrase.");
         setLoading(false);
         setUnlockPass("");
@@ -218,7 +220,7 @@ export default function App() {
       setUnlockPass("");
       await refreshData();
       await verifyIntegrity(masterHex);
-      await storage.appendTamperLog({ ts: new Date().toISOString(), event: "unlocked", detail: "success" });
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlocked", detail: "success" });
     } catch (e: any) {
       console.error("Unlock error", e);
       Alert.alert("Error", "Failed to unlock vault. " + (e.message || ""));
@@ -230,29 +232,29 @@ export default function App() {
   /* ---------------------------
      Lock
   --------------------------- */
-  async function handleLock() {
+  async function handleLock(): Promise<void> {
     setMasterKeyHex(null);
     setLocked(true);
     setViewingEntryPlain(null);
     setNewEntryText("");
-    await storage.appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
+    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
   }
 
   /* ---------------------------
      Verify integrity
   --------------------------- */
-  async function verifyIntegrity(masterHexParam?: string) {
+  async function verifyIntegrity(masterHexParam?: string): Promise<void> {
     const masterHex = masterHexParam || masterKeyHex;
     if (!masterHex) {
       setIntegrityStatus("Unknown");
       return;
     }
     try {
-      const loaded = await storage.loadEntries();
+      const loaded: Entry[] = await (storage as any).loadEntries();
       let okCount = 0,
         failCount = 0;
-      for (const e of loaded) {
-        const ok = crypto.verifyEntryHMAC(masterHex, e);
+      for (const e of loaded || []) {
+        const ok = (crypto as any).verifyEntryHMAC(masterHex, e);
         if (ok) okCount++;
         else failCount++;
       }
@@ -260,7 +262,7 @@ export default function App() {
       setIntegrityStatus(status);
       const now = new Date().toISOString();
       setLastVerifiedAt(now);
-      await storage.appendTamperLog({ ts: now, event: "integrity_check", detail: `${okCount} ok, ${failCount} fail` });
+      await (storage as any).appendTamperLog({ ts: now, event: "integrity_check", detail: `${okCount} ok, ${failCount} fail` });
       refreshData();
     } catch (err) {
       console.warn("Integrity check error", err);
@@ -271,7 +273,7 @@ export default function App() {
   /* ---------------------------
      Save new entry
   --------------------------- */
-  async function handleSaveNewEntry() {
+  async function handleSaveNewEntry(): Promise<void> {
     if (!masterKeyHex) {
       Alert.alert("Locked", "Unlock first.");
       return;
@@ -282,11 +284,11 @@ export default function App() {
     }
     setLoading(true);
     try {
-      const { ivHex, ciphertextB64, hmac, ts } = await crypto.encryptEntryWithMaster(masterKeyHex, newEntryText);
+      const { ivHex, ciphertextB64, hmac, ts } = await (crypto as any).encryptEntryWithMaster(masterKeyHex, newEntryText);
       const id = Date.now().toString() + "-" + ivHex.slice(0, 6);
       const entry: Entry = { id, iv: ivHex, ciphertext: ciphertextB64, hmac, timestamp: ts };
-      await storage.appendEntry(entry);
-      await storage.appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
+      await (storage as any).appendEntry(entry);
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
       setNewEntryText("");
       setShowNewModal(false);
       refreshData();
@@ -301,21 +303,21 @@ export default function App() {
   /* ---------------------------
      View entry
   --------------------------- */
-  async function handleViewEntry(entry: Entry) {
+  async function handleViewEntry(entry: Entry): Promise<void> {
     if (!masterKeyHex) {
       Alert.alert("Locked", "Unlock first.");
       return;
     }
-    const ok = crypto.verifyEntryHMAC(masterKeyHex, entry);
+    const ok = (crypto as any).verifyEntryHMAC(masterKeyHex, entry);
     if (!ok) {
       Alert.alert("Integrity failed", "Entry integrity check failed.");
-      await storage.appendTamperLog({ ts: new Date().toISOString(), event: "entry_integrity_fail", id: entry.id });
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_integrity_fail", id: entry.id });
       return;
     }
     try {
-      const plain = crypto.decryptEntryWithMaster(masterKeyHex, entry);
+      const plain = (crypto as any).decryptEntryWithMaster(masterKeyHex, entry);
       setViewingEntryPlain({ id: entry.id, text: plain });
-      await storage.appendTamperLog({ ts: new Date().toISOString(), event: "entry_viewed", id: entry.id });
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_viewed", id: entry.id });
     } catch (e) {
       console.error("Decrypt error", e);
       Alert.alert("Error", "Decryption failed.");
@@ -324,34 +326,31 @@ export default function App() {
 
   /* ---------------------------
      Panic wipe
+     - do multiple overwrite passes
+     - delete SecureStore keys
+     - verify deletion
   --------------------------- */
-  async function performPanicWipe() {
+  async function performPanicWipe(): Promise<void> {
     setLoading(true);
     try {
-      const current = await storage.loadEntries();
+      const current: Entry[] = await (storage as any).loadEntries();
       const passes = 3;
       for (let p = 0; p < passes; p++) {
         const junk: Entry[] = [];
-        for (const e of current) {
+        for (const e of current || []) {
           const len = Math.max(32, Math.floor(Math.random() * 128));
-          const junkHex = await crypto.randomHex(len);
-          junk.push({
-            ...e,
-            ciphertext: junkHex,
-            hmac: junkHex,
-            iv: junkHex.slice(0, 32),
-            timestamp: new Date().toISOString(),
-          });
+          const junkHex = await (crypto as any).randomHex(len);
+          junk.push({ ...e, ciphertext: junkHex, hmac: junkHex, iv: junkHex.slice(0, 32), timestamp: new Date().toISOString() });
         }
-        await storage.saveEntries(junk);
+        await (storage as any).saveEntries(junk);
         await new Promise((r) => setTimeout(r, 150));
       }
 
-      await storage.clearAllVaultStorage();
+      await (storage as any).clearAllVaultStorage();
 
       // confirm removal
-      const checkWrapped = await SecureStore.getItemAsync(storage.SECUREKEY_WRAPPED);
-      const checkEntries = await storage.loadEntries();
+      const checkWrapped = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
+      const checkEntries = await (storage as any).loadEntries();
       if (checkWrapped !== null || (checkEntries && checkEntries.length > 0)) {
         console.warn("Panic wipe incomplete", { checkWrapped, entriesLen: checkEntries.length });
       }
@@ -393,23 +392,9 @@ export default function App() {
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.label}>Create master passphrase</Text>
-          <TextInput
-            secureTextEntry
-            placeholder="Enter passphrase"
-            placeholderTextColor="#3a6757"
-            value={setupPassA}
-            onChangeText={setSetupPassA}
-            style={styles.input}
-          />
+          <TextInput secureTextEntry placeholder="Enter passphrase" placeholderTextColor="#3a6757" value={setupPassA} onChangeText={setSetupPassA} style={styles.input} />
           <Text style={styles.label}>Confirm passphrase</Text>
-          <TextInput
-            secureTextEntry
-            placeholder="Confirm passphrase"
-            placeholderTextColor="#3a6757"
-            value={setupPassB}
-            onChangeText={setSetupPassB}
-            style={styles.input}
-          />
+          <TextInput secureTextEntry placeholder="Confirm passphrase" placeholderTextColor="#3a6757" value={setupPassB} onChangeText={setSetupPassB} style={styles.input} />
           <Text style={styles.note}>Use a strong passphrase (recommended 12+ characters). No recovery is possible without it.</Text>
           <TouchableOpacity style={styles.buttonPrimary} onPress={handleCreateVault}>
             <Text style={styles.buttonText}>Initialize Vault</Text>
@@ -431,45 +416,27 @@ export default function App() {
         </View>
 
         <View style={styles.centered}>
-          <Text style={styles.smallMuted}>
-            Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text>
-          </Text>
+          <Text style={styles.smallMuted}>Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text></Text>
           <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
           <Text style={styles.smallMuted}>Offline: Yes</Text>
 
-          <TextInput
-            placeholder="Enter passphrase"
-            placeholderTextColor="#3a6757"
-            secureTextEntry
-            value={unlockPass}
-            onChangeText={setUnlockPass}
-            style={[styles.input, { marginTop: 20, width: "90%" }]}
-          />
+          <TextInput placeholder="Enter passphrase" placeholderTextColor="#3a6757" secureTextEntry value={unlockPass} onChangeText={setUnlockPass} style={[styles.input, { marginTop: 20, width: "90%" }]} />
 
           <TouchableOpacity style={styles.buttonPrimary} onPress={handleUnlock}>
             <Text style={styles.buttonText}>Unlock Vault</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.buttonSecondary, { marginTop: 12 }]}
-            onPress={async () => {
-              const has = await LocalAuthentication.hasHardwareAsync();
-              if (!has) {
-                Alert.alert("Unavailable", "Biometric unavailable.");
-                return;
-              }
-              const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Biometric Vault Unlock" });
-              if (res.success) Alert.alert("Biometric OK", "Now enter passphrase to finish unlock.");
-              else Alert.alert("Biometric failed", "Cancelled.");
-            }}
-          >
+          <TouchableOpacity style={[styles.buttonSecondary, { marginTop: 12 }]} onPress={async () => {
+            const has = await LocalAuthentication.hasHardwareAsync();
+            if (!has) { Alert.alert("Unavailable", "Biometric unavailable."); return; }
+            const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Biometric Vault Unlock" });
+            if (res.success) Alert.alert("Biometric OK", "Now enter passphrase to finish unlock.");
+            else Alert.alert("Biometric failed", "Cancelled.");
+          }}>
             <Text style={styles.buttonText}>Use Biometric (requires passphrase)</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.linkButton]}
-            onPress={() => Alert.alert("Security reminder", "AES-256 & HMAC-SHA256. Device compromise still defeats protection.")}
-          >
+          <TouchableOpacity style={[styles.linkButton]} onPress={() => Alert.alert("Security reminder", "AES-256 & HMAC-SHA256. Device compromise still defeats protection.")}>
             <Text style={styles.linkText}>Security Details</Text>
           </TouchableOpacity>
         </View>
@@ -487,9 +454,7 @@ export default function App() {
         </View>
 
         <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.smallMuted}>
-            Vault: <Text style={{ color: "#8cffb7" }}>Unlocked</Text>
-          </Text>
+          <Text style={styles.smallMuted}>Vault: <Text style={{ color: "#8cffb7" }}>Unlocked</Text></Text>
           <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
           <Text style={styles.smallMuted}>Entries: {entries.length}</Text>
 
@@ -509,10 +474,7 @@ export default function App() {
             <Text style={styles.buttonText}>Audit / Verify</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.buttonSecondary, { backgroundColor: "#2a2a2a", borderColor: "#444" }]}
-            onPress={() => setShowPanicConfirm(true)}
-          >
+          <TouchableOpacity style={[styles.buttonSecondary, { backgroundColor: "#2a2a2a", borderColor: "#444" }]} onPress={() => setShowPanicConfirm(true)}>
             <Text style={styles.buttonText}>Panic Wipe</Text>
           </TouchableOpacity>
 
@@ -522,8 +484,7 @@ export default function App() {
             <ScrollView style={{ maxHeight: 120, marginTop: 6 }}>
               {tamperLog.slice(0, 10).map((log, idx) => (
                 <Text key={idx} style={styles.logLine}>
-                  {log.ts} — {log.event}
-                  {log.detail ? `: ${log.detail}` : ""}
+                  {log.ts} — {log.event} {log.detail ? `: ${log.detail}` : ""}
                 </Text>
               ))}
             </ScrollView>
@@ -533,15 +494,9 @@ export default function App() {
         <View style={styles.colRight}>
           <Text style={styles.sectionTitle}>Entries (append-only)</Text>
           {entries.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.smallMuted}>No entries yet.</Text>
-            </View>
+            <View style={styles.emptyBox}><Text style={styles.smallMuted}>No entries yet.</Text></View>
           ) : (
-            <FlatList
-              data={entries}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <EntryCard item={item} onView={handleViewEntry} />}
-            />
+            <FlatList data={entries} keyExtractor={(item) => item.id} renderItem={({ item }) => <EntryCard item={item} onView={handleViewEntry} />} />
           )}
         </View>
       </View>
@@ -551,22 +506,9 @@ export default function App() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>New Secure Entry</Text>
-            <TextInput
-              multiline
-              value={newEntryText}
-              onChangeText={setNewEntryText}
-              placeholder="Write your entry"
-              placeholderTextColor="#4f6c5a"
-              style={[styles.input, { height: 140 }]}
-            />
+            <TextInput multiline value={newEntryText} onChangeText={setNewEntryText} placeholder="Write your entry" placeholderTextColor="#4f6c5a" style={[styles.input, { height: 140 }]} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
-              <TouchableOpacity
-                style={[styles.buttonSecondary, { flex: 1, marginRight: 8 }]}
-                onPress={() => {
-                  setShowNewModal(false);
-                  setNewEntryText("");
-                }}
-              >
+              <TouchableOpacity style={[styles.buttonSecondary, { flex: 1, marginRight: 8 }]} onPress={() => { setShowNewModal(false); setNewEntryText(""); }}>
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.buttonPrimary, { flex: 1 }]} onPress={handleSaveNewEntry}>
@@ -593,33 +535,12 @@ export default function App() {
       </Modal>
 
       {/* Audit Modal */}
-      <AuditModal
-        visible={showAudit}
-        onClose={() => setShowAudit(false)}
-        meta={{ pbkdf2Iterations: PBKDF2_ITERATIONS }}
-        tamperLog={tamperLog}
-        lastVerifiedAt={lastVerifiedAt}
-      />
+      <AuditModal visible={showAudit} onClose={() => setShowAudit(false)} meta={{ pbkdf2Iterations: PBKDF2_ITERATIONS }} tamperLog={tamperLog} lastVerifiedAt={lastVerifiedAt} />
 
       {/* Panic Modal */}
-      <PanicModal
-        visible={showPanicConfirm}
-        onCancel={() => {
-          setShowPanicConfirm(false);
-          setPanicConfirmText("");
-        }}
-        onConfirm={async () => {
-          setShowPanicConfirm(false);
-          setPanicConfirmText("");
-          await performPanicWipe();
-        }}
-        confirmText={panicConfirmText}
-        setConfirmText={setPanicConfirmText}
-      />
+      <PanicModal visible={showPanicConfirm} onCancel={() => { setShowPanicConfirm(false); setPanicConfirmText(""); }} onConfirm={async () => { setShowPanicConfirm(false); setPanicConfirmText(""); await performPanicWipe(); }} confirmText={panicConfirmText} setConfirmText={setPanicConfirmText} />
 
-      <View style={styles.footer}>
-        <Text style={styles.smallMuted}>Offline. Security depends on passphrase and device integrity.</Text>
-      </View>
+      <View style={styles.footer}><Text style={styles.smallMuted}>Offline. Security depends on passphrase and device integrity.</Text></View>
     </SafeAreaView>
   );
 }
