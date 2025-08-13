@@ -41,7 +41,6 @@ type Entry = {
 type TamperLogItem = { ts: string; event: string; detail?: string; id?: string };
 
 export default function App(): JSX.Element {
-  // vault state
   const [initialized, setInitialized] = useState<boolean | null>(null);
   const [locked, setLocked] = useState<boolean>(true);
   const [masterKeyHex, setMasterKeyHex] = useState<string | null>(null);
@@ -59,8 +58,6 @@ export default function App(): JSX.Element {
   const [showAudit, setShowAudit] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [integrityStatus, setIntegrityStatus] = useState<string>("Unknown");
-
-  // panic modal states
   const [showPanicConfirm, setShowPanicConfirm] = useState<boolean>(false);
   const [panicConfirmText, setPanicConfirmText] = useState<string>("");
 
@@ -71,7 +68,6 @@ export default function App(): JSX.Element {
         const wrapped = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
         const salt = await SecureStore.getItemAsync((storage as any).SECUREKEY_SALT);
         const iter = await SecureStore.getItemAsync((storage as any).SECUREKEY_ITER);
-        // storage.storageGetMeta may be an async function in your storage.js
         const metaJson = await (storage as any).storageGetMeta?.();
         const meta = metaJson ? metaJson : { biometricEnabled: false };
         setVaultMeta(meta);
@@ -90,10 +86,10 @@ export default function App(): JSX.Element {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
-  // Prevent screenshots when unlocked, allow when locked
+  
   useEffect(() => {
     (async () => {
       if (!locked) {
@@ -106,7 +102,7 @@ export default function App(): JSX.Element {
         try {
           await ScreenCapture.allowScreenCaptureAsync();
         } catch (e) {
-          // ignore
+          
         }
       }
     })();
@@ -133,7 +129,6 @@ export default function App(): JSX.Element {
     }
     setLoading(true);
     try {
-      // master key (256-bit)
       const masterHex = await (crypto as any).randomHex(32);
       const saltHex = await (crypto as any).randomHex(16);
       const wrapIvHex = await (crypto as any).randomHex(16);
@@ -147,7 +142,7 @@ export default function App(): JSX.Element {
       await SecureStore.setItemAsync((storage as any).SECUREKEY_ITER, PBKDF2_ITERATIONS.toString());
       await SecureStore.setItemAsync((storage as any).SECUREKEY_CREATED, new Date().toISOString());
 
-      // initialize AsyncStorage with empty arrays
+      
       await (storage as any).saveEntries([]);
       await AsyncStorage.setItem((storage as any).ASYNC_TAMPERLOG_KEY, JSON.stringify([]));
       await AsyncStorage.setItem((storage as any).ASYNC_META_KEY, JSON.stringify({ biometricEnabled: false }));
@@ -186,7 +181,7 @@ export default function App(): JSX.Element {
       const wrappedObj = JSON.parse(wrappedObjStr);
       const { wrapped, wrapIvHex } = wrappedObj;
 
-      // biometric gating (optional)
+      
       const metaJson = await AsyncStorage.getItem((storage as any).ASYNC_META_KEY);
       const meta = metaJson ? JSON.parse(metaJson) : { biometricEnabled: false };
       setVaultMeta(meta);
@@ -348,18 +343,17 @@ export default function App(): JSX.Element {
 
       await (storage as any).clearAllVaultStorage();
 
-      // confirm removal
+    
       const checkWrapped = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
       const checkEntries = await (storage as any).loadEntries();
       if (checkWrapped !== null || (checkEntries && checkEntries.length > 0)) {
         console.warn("Panic wipe incomplete", { checkWrapped, entriesLen: checkEntries.length });
-        //add to tamper log saying failed wipe attempt
+        
         await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wipe_failed", detail: "Data still exists after wipe" });
 
       }
       setEntries([]);
-      // i don't think we need to clear tamper log here, but you can uncomment if needed
-      //setTamperLog([]);
+      
       setMasterKeyHex(null);
       setLocked(true);
       setInitialized(false);
@@ -422,7 +416,6 @@ export default function App(): JSX.Element {
         <View style={styles.centered}>
           <Text style={styles.smallMuted}>Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text></Text>
           <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
-          // its showing false offline staus because we are not checking network here, but you can add that check if needed
           <Text style={styles.smallMuted}>Offline: Yes</Text>
 
           <TextInput placeholder="Enter passphrase" placeholderTextColor="#3a6757" secureTextEntry value={unlockPass} onChangeText={setUnlockPass} style={[styles.input, { marginTop: 20, width: "90%" }]} />
@@ -449,7 +442,7 @@ export default function App(): JSX.Element {
     );
   }
 
-  // Unlocked view
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerRow}>
