@@ -213,6 +213,7 @@ async function handleDevUnlock(): Promise<void> {
           const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Vault biometric" });
           if (!res.success) {
             Alert.alert("Biometric failed", "Biometric authentication failed.");
+            await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "biometric_failed" });
             setLoading(false);
             return;
           }
@@ -241,6 +242,7 @@ async function handleDevUnlock(): Promise<void> {
     } catch (e: any) {
       console.error("Unlock error", e);
       Alert.alert("Error", "Failed to unlock vault. " + (e.message || ""));
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: e.message || "unknown" });
     } finally {
       setLoading(false);
     }
@@ -338,6 +340,7 @@ async function handleDevUnlock(): Promise<void> {
     } catch (e) {
       console.error("Decrypt error", e);
       Alert.alert("Error", "Decryption failed.");
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_decrypt_fail", id: entry.id});
     }
   }
 
@@ -363,7 +366,7 @@ async function handleDevUnlock(): Promise<void> {
         await new Promise((r) => setTimeout(r, 150));
       }
 
-      await (storage as any).clearAllVaultStorage();
+      await (storage as any).clearAllEntries();
 
     
       const checkWrapped = await SecureStore.getItemAsync((storage as any).SECUREKEY_WRAPPED);
@@ -376,10 +379,11 @@ async function handleDevUnlock(): Promise<void> {
       }
       setEntries([]);
       
-      setMasterKeyHex(null);
-      setLocked(true);
-      setInitialized(false);
+    setMasterKeyHex(null);
+    setLocked(true);
+    setInitialized(false);
       Alert.alert("Panic wipe complete", "All vault data removed.");
+      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wiped" });
     } catch (e: any) {
       console.error("Panic wipe failed", e);
       Alert.alert("Error", "Panic wipe failed. " + (e.message || ""));
@@ -509,7 +513,7 @@ async function handleDevUnlock(): Promise<void> {
           <View style={{ marginTop: 18 }}>
             <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
             <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
-            <ScrollView style={{ maxHeight: 250, marginTop: 6 }}>
+            <ScrollView style={{ maxHeight: 350, marginTop: 6 }}>
               {tamperLog.slice(0, 10).map((log, idx) => (
                 <Text key={idx} style={styles.logLine}>
                   {log.ts} — {log.event} {log.detail ? `: ${log.detail}` : ""}
@@ -522,7 +526,7 @@ async function handleDevUnlock(): Promise<void> {
         <View style={styles.colRight}>
           <Text style={styles.sectionTitle}>Entries (append-only)</Text>
           {entries.length === 0 ? (
-            <View style={styles.emptyBox}><Text style={styles.smallMuted}>No entries yet.</Text></View>
+            <View style={styles.emptyBox}><Text style={styles.smallMuted}>Click on New Entry</Text></View>
           ) : (
             <FlatList data={entries} keyExtractor={(item) => item.id} renderItem={({ item }) => <EntryCard item={item} onView={handleViewEntry} />} />
           )}
@@ -534,7 +538,7 @@ async function handleDevUnlock(): Promise<void> {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>New Secure Entry</Text>
-            <TextInput multiline value={newEntryText} onChangeText={setNewEntryText} placeholder="Write your entry" placeholderTextColor="#4f6c5a" style={[styles.input, { height: 140 }]} />
+            <TextInput multiline value={newEntryText} onChangeText={setNewEntryText} placeholder="Write your entry" placeholderTextColor="#4f6c5a" style={[styles.input, { height: 70 }]} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
               <TouchableOpacity style={[styles.buttonSecondary, { flex: 1, marginRight: 8 }]} onPress={() => { setShowNewModal(false); setNewEntryText(""); }}>
                 <Text style={styles.buttonText}>Cancel</Text>

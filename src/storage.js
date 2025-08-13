@@ -1,6 +1,8 @@
 // src/storage.js
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+ // Assuming you have a storage.js file for async operations
+
 
 export const SECUREKEY_WRAPPED = "vault_wrapped_key";
 export const SECUREKEY_SALT = "vault_salt";
