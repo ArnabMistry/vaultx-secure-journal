@@ -15,9 +15,9 @@ export default function AuditModal({ visible, onClose, meta, tamperLog, lastVeri
             <Text style={styles.auditLine}>PBKDF2 iterations: {meta?.pbkdf2Iterations || "stored"}</Text>
             <Text style={styles.auditLine}>Salt (truncated): {meta?.saltTruncated || "stored"}</Text>
             <Text style={styles.auditLine}>Created: {meta?.created || "stored"}</Text>
-            <Text style={{ color: "#d0e9d3", marginTop: 12 }}>Tamper Log (last 50)</Text>
+            <Text style={{ color: "#d0e9d3", marginTop: 12 }}>Tamper Log (last 500)</Text>
             <View style={{ marginTop: 8 }}>
-              {tamperLog.slice(0, 50).map((log, idx) => (
+              {tamperLog.slice(0, 500).map((log, idx) => (
                 <Text key={idx} style={styles.logLine}>
                   {log.ts} — {log.event} {log.detail ? `: ${log.detail}` : ""}
                 </Text>

@@ -28,6 +28,8 @@ import EntryCard from "../src/components/EntryCard";
 
 const PBKDF2_ITERATIONS = 100000;
 
+// DEV unlock for testing purposes
+
 // Minimal TS types (storage.js & crypto.js are JS files you said you already have)
 type VaultMeta = { biometricEnabled: boolean };
 type Entry = {
@@ -89,6 +91,26 @@ export default function App(): JSX.Element {
     
   }, []);
 
+  // dev toggle (safe shortcut visible only in development)
+const DEV_UNLOCK_ENABLED = __DEV__;
+
+// quick dev unlock (keeps a dummy 64-char hex so length checks pass)
+async function handleDevUnlock(): Promise<void> {
+  //console.log("🔓 Dev unlock pressed");
+  // fake master key (64 hex chars) so code expecting masterKeyHex length won't immediately fail
+  const fakeMaster = "f".repeat(64);
+  setMasterKeyHex(fakeMaster);
+  setLocked(false);
+  setIntegrityStatus("Dev");
+  await refreshData();
+  try {
+    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "dev_unlocked" });
+  } catch (e) {
+    // ignore storage errors in dev helper
+    console.warn("dev unlock log failed", e);
+  }
+}
+//dev unlock end
   
   useEffect(() => {
     (async () => {
@@ -433,6 +455,14 @@ export default function App(): JSX.Element {
           }}>
             <Text style={styles.buttonText}>Use Biometric (requires passphrase)</Text>
           </TouchableOpacity>
+          {DEV_UNLOCK_ENABLED && (
+<TouchableOpacity
+    style={[styles.buttonSecondary, { marginTop: 12 }]}
+    onPress={handleDevUnlock}
+  >
+    <Text style={styles.buttonText}>Skip Unlock (Dev)</Text>
+  </TouchableOpacity>
+)}
 
           <TouchableOpacity style={[styles.linkButton]} onPress={() => Alert.alert("Security reminder", "AES-256 & HMAC-SHA256. Device compromise still defeats protection.")}>
             <Text style={styles.linkText}>Security Details</Text>
@@ -479,7 +509,7 @@ export default function App(): JSX.Element {
           <View style={{ marginTop: 18 }}>
             <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
             <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
-            <ScrollView style={{ maxHeight: 120, marginTop: 6 }}>
+            <ScrollView style={{ maxHeight: 250, marginTop: 6 }}>
               {tamperLog.slice(0, 10).map((log, idx) => (
                 <Text key={idx} style={styles.logLine}>
                   {log.ts} — {log.event} {log.detail ? `: ${log.detail}` : ""}
