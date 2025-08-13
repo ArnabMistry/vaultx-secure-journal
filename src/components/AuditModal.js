@@ -8,7 +8,7 @@ export default function AuditModal({ visible, onClose, meta, tamperLog, lastVeri
     <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalBoxLarge}>
-          <Text style={styles.modalTitle}>Audit & Verification</Text>
+          <Text style={styles.modalTitle}>Audit Log</Text>
           <ScrollView style={{ maxHeight: 380 }}>
             <Text style={styles.auditLine}>Algorithm: AES-256-CBC (client-side)</Text>
             <Text style={styles.auditLine}>HMAC: HMAC-SHA256</Text>

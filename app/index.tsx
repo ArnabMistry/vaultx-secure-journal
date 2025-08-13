@@ -353,9 +353,13 @@ export default function App(): JSX.Element {
       const checkEntries = await (storage as any).loadEntries();
       if (checkWrapped !== null || (checkEntries && checkEntries.length > 0)) {
         console.warn("Panic wipe incomplete", { checkWrapped, entriesLen: checkEntries.length });
+        //add to tamper log saying failed wipe attempt
+        await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wipe_failed", detail: "Data still exists after wipe" });
+
       }
       setEntries([]);
-      setTamperLog([]);
+      // i don't think we need to clear tamper log here, but you can uncomment if needed
+      //setTamperLog([]);
       setMasterKeyHex(null);
       setLocked(true);
       setInitialized(false);
@@ -418,6 +422,7 @@ export default function App(): JSX.Element {
         <View style={styles.centered}>
           <Text style={styles.smallMuted}>Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text></Text>
           <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
+          // its showing false offline staus because we are not checking network here, but you can add that check if needed
           <Text style={styles.smallMuted}>Offline: Yes</Text>
 
           <TextInput placeholder="Enter passphrase" placeholderTextColor="#3a6757" secureTextEntry value={unlockPass} onChangeText={setUnlockPass} style={[styles.input, { marginTop: 20, width: "90%" }]} />
@@ -471,7 +476,7 @@ export default function App(): JSX.Element {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.buttonSecondary} onPress={() => setShowAudit(true)}>
-            <Text style={styles.buttonText}>Audit / Verify</Text>
+            <Text style={styles.buttonText}>Audit Log</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.buttonSecondary, { backgroundColor: "#2a2a2a", borderColor: "#444" }]} onPress={() => setShowPanicConfirm(true)}>

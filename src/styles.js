@@ -110,5 +110,46 @@ export default StyleSheet.create({
   modalBox: { backgroundColor: "#07120c", padding: 16, width: "92%", borderRadius: 10, borderColor: "#0f3e2f", borderWidth: 1 },
   modalBoxLarge: { backgroundColor: "#07120c", padding: 16, width: "96%", borderRadius: 10, borderColor: "#0f3e2f", borderWidth: 1, maxHeight: "85%" },
   modalTitle: { color: "#9ef5c9", fontSize: 16, fontWeight: "700", marginBottom: 8 },
-  auditLine: { color: "#bfeed7", marginBottom: 6 }
+  auditLine: { color: "#bfeed7", marginBottom: 6 },
+
+  /* --- NEW / MISSING STYLES ADDED BELOW --- */
+
+  // Used to display decrypted entry text (readable/plain)
+  plainText: {
+    color: "#dff7e9",
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace"
+  },
+
+  // Small action button in header (e.g. "Lock Vault")
+  smallAction: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#0f3e2f",
+    backgroundColor: "transparent",
+    marginTop: 6
+  },
+  smallActionText: {
+    color: "#9ef5c9",
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace"
+  },
+
+  // Link-style button & text (used in locked view for "Security Details")
+  linkButton: {
+    marginTop: 12,
+    paddingVertical: 6,
+    alignItems: "center",
+    backgroundColor: "transparent"
+  },
+  linkText: {
+    color: "#8ff0c5",
+    fontSize: 13,
+    textDecorationLine: "underline",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace"
+  }
 });
