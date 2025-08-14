@@ -42,6 +42,39 @@ type Entry = {
 };
 type TamperLogItem = { ts: string; event: string; detail?: string; id?: string };
 
+// --- Forensic-friendly formatting helpers ---
+const rfc3339Parts = (ts: string) => {
+  // Always display in UTC and in an ISO 8601 / RFC 3339 form
+  // e.g., "2025-08-15T13:42:07.123Z" -> date "2025-08-15", time "13:42:07.123Z"
+  const iso = new Date(ts).toISOString();
+  const [date, time] = iso.split("T");
+  return { date, time };
+};
+
+type Severity = "ok" | "warn" | "err" | "info";
+
+const severityFor = (evt: string, detail?: string): Severity => {
+  const e = evt.toLowerCase();
+
+  if (e.includes("panic_wipe") || e.includes("entry_integrity_fail")) return "err";
+  if (e.includes("unlock_failed") || e.includes("decrypt_fail")) return "err";
+  if (e.includes("integrity_check") && detail && /fail/i.test(detail)) return "warn";
+  if (e.includes("dev_unlocked")) return "warn";
+
+  if (e.includes("unlocked") || e.includes("locked") || e.includes("entry_added")) return "ok";
+  if (e.includes("manual_integrity_check")) return "info";
+
+  return "info";
+};
+
+const colorsBySeverity: Record<Severity, { bg: string; border: string; label: string }> = {
+  ok:   { bg: "#0e2a19", border: "#1f5c3a", label: "#93e6b5" },   // green-ish
+  warn: { bg: "#2a240e", border: "#6b5d1f", label: "#f4d35e" },   // amber
+  err:  { bg: "#2a0e0e", border: "#6b1f1f", label: "#ff9b9b" },   // red-ish
+  info: { bg: "#0e162a", border: "#1f346b", label: "#9ec1ff" },   // blue-ish
+};
+// --- End forensic helpers ---
+
 export default function App(): JSX.Element {
   const [initialized, setInitialized] = useState<boolean | null>(null);
   const [locked, setLocked] = useState<boolean>(true);
@@ -552,6 +585,38 @@ async function handleVerifyNow(): Promise<void> {
           </TouchableOpacity>
 
           <View style={{ marginTop: 18 }}>
+  <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
+  <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
+
+  <ScrollView style={{ maxHeight: 300, marginTop: 6, backgroundColor: "#010a0b", padding: 8, borderRadius: 4 }}>
+    {tamperLog.slice(0, 30).map((log, idx) => {
+      const { date, time } = rfc3339Parts(log.ts);
+      const sev = severityFor(log.event, log.detail);
+      const labelColor = colorsBySeverity[sev].label;
+
+      return (
+        <Text
+          key={idx}
+          style={{
+            color: "#e1e5e2",
+            fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
+            fontVariant: ["tabular-nums"],
+            fontSize: 12,
+            marginBottom: 4,
+          }}
+        >
+          {`${date} ${time} | `}
+          <Text style={{ color: labelColor, fontWeight: "600" }}>
+            {sev.toUpperCase().padEnd(5)}
+          </Text>
+          {` | ${log.event}${log.id ? ` #${log.id}` : ""}${log.detail ? ` — ${log.detail}` : ""}`}
+        </Text>
+      );
+    })}
+  </ScrollView>
+</View>
+
+          {/* <View style={{ marginTop: 18 }}>
             <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
             <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
             <ScrollView style={{ maxHeight: 300, marginTop: 6 }}>
@@ -561,7 +626,7 @@ async function handleVerifyNow(): Promise<void> {
                 </Text>
               ))}
             </ScrollView>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.colRight}>
