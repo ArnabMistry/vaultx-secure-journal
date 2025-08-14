@@ -258,6 +258,29 @@ async function handleDevUnlock(): Promise<void> {
     setNewEntryText("");
     await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
   }
+  /* ---------------------------
+     One-click verify wrapper (UI-friendly)
+  --------------------------- */
+async function handleVerifyNow(): Promise<void> {
+  if (!masterKeyHex) {
+    Alert.alert("Locked", "Unlock the vault to run integrity verification.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    // run the existing verify function (it updates integrityStatus + tamper log)
+    await verifyIntegrity(masterKeyHex);
+    // small feedback — the status is visible in the header, so no heavy alert needed.
+    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "manual_integrity_check" });
+  } catch (e: any) {
+    console.warn("Manual verify failed", e);
+    Alert.alert("Verify failed", e?.message || "Unknown error");
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   /* ---------------------------
      Verify integrity
@@ -493,6 +516,15 @@ async function handleDevUnlock(): Promise<void> {
           <TouchableOpacity style={styles.smallAction} onPress={handleLock}>
             <Text style={styles.smallActionText}>Lock Vault</Text>
           </TouchableOpacity>
+          {/* Add this next to the Lock Vault button (header right column) */}
+{/* <TouchableOpacity
+  style={[styles.smallAction, { marginTop: 6, marginBottom: 2 }]}
+  onPress={handleVerifyNow}
+  disabled={!masterKeyHex || loading}
+>
+  <Text style={styles.smallActionText}>Verify</Text>
+</TouchableOpacity> */}
+
         </View>
       </View>
 
@@ -506,6 +538,15 @@ async function handleDevUnlock(): Promise<void> {
             <Text style={styles.buttonText}>Audit Log</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+  style={[styles.buttonSecondary, { marginTop: 12 }]}
+  onPress={handleVerifyNow}
+  disabled={!masterKeyHex || loading}
+>
+  <Text style={styles.buttonText}>HashVerify</Text>
+</TouchableOpacity>
+
+
           <TouchableOpacity style={[styles.buttonSecondary, { backgroundColor: "#2a2a2a", borderColor: "#444" }]} onPress={() => setShowPanicConfirm(true)}>
             <Text style={styles.buttonText}>Panic Wipe</Text>
           </TouchableOpacity>
@@ -513,7 +554,7 @@ async function handleDevUnlock(): Promise<void> {
           <View style={{ marginTop: 18 }}>
             <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
             <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
-            <ScrollView style={{ maxHeight: 350, marginTop: 6 }}>
+            <ScrollView style={{ maxHeight: 300, marginTop: 6 }}>
               {tamperLog.slice(0, 10).map((log, idx) => (
                 <Text key={idx} style={styles.logLine}>
                   {log.ts} — {log.event} {log.detail ? `: ${log.detail}` : ""}
