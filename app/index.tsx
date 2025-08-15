@@ -25,6 +25,7 @@ import * as storage from "../src/storage";
 import PanicModal from "../src/components/PanicModal";
 import AuditModal from "../src/components/AuditModal";
 import EntryCard from "../src/components/EntryCard";
+import * as blockchain from "../src/blockchain";
 
 const PBKDF2_ITERATIONS = 100000;
 
@@ -138,6 +139,7 @@ async function handleDevUnlock(): Promise<void> {
   await refreshData();
   try {
     await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "dev_unlocked" });
+    await blockchain.appendEvent({ event: "dev_unlocked", detail: "dev" });
   } catch (e) {
     // ignore storage errors in dev helper
     console.warn("dev unlock log failed", e);
@@ -169,6 +171,31 @@ async function handleDevUnlock(): Promise<void> {
     const t = await (storage as any).loadTamperLog();
     setTamperLog(t || []);
   }
+
+  /* ---------------------------
+      Hash verify (integrity check)
+  --------------------------- */
+  
+async function handleHashVerify() {
+  try {
+    setLoading(true);
+    
+    const res = await (blockchain as any).verifyChain();
+   
+    setIntegrityStatus(res.ok ? "Verified" : "Fail");
+    setLastVerifiedAt(new Date().toISOString());
+    
+    await (blockchain as any).appendEvent({ event: "integrity_check", detail: `${res.breaks || 0} breaks` });
+    
+    await refreshData();
+  } catch (e) {
+    console.warn("Hash verify failed", e);
+    Alert.alert("Verify failed", e?.message || "Unknown error");
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   /* ---------------------------
      Setup: create vault
@@ -203,6 +230,7 @@ async function handleDevUnlock(): Promise<void> {
       await AsyncStorage.setItem((storage as any).ASYNC_META_KEY, JSON.stringify({ biometricEnabled: false }));
 
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "vault_created" });
+      await blockchain.appendEvent({ event: "vault_created", detail: "initialization" });
 
       setInitialized(true);
       setLocked(true);
@@ -247,6 +275,7 @@ async function handleDevUnlock(): Promise<void> {
           if (!res.success) {
             Alert.alert("Biometric failed", "Biometric authentication failed.");
             await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "biometric_failed" });
+            await blockchain.appendEvent({ event: "unlock_failed", detail: "biometric_failed" });
             setLoading(false);
             return;
           }
@@ -260,6 +289,7 @@ async function handleDevUnlock(): Promise<void> {
         if (!masterHex || masterHex.length !== 64) throw new Error("Master key length mismatch");
       } catch (e) {
         await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "wrong_passphrase" });
+        await blockchain.appendEvent({ event: "unlock_failed", detail: "wrong_passphrase" });
         Alert.alert("Unlock failed", "Incorrect passphrase.");
         setLoading(false);
         setUnlockPass("");
@@ -272,10 +302,12 @@ async function handleDevUnlock(): Promise<void> {
       await refreshData();
       await verifyIntegrity(masterHex);
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlocked", detail: "success" });
+      await blockchain.appendEvent({ event: "unlocked", detail: "success" });
     } catch (e: any) {
       console.error("Unlock error", e);
       Alert.alert("Error", "Failed to unlock vault. " + (e.message || ""));
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: e.message || "unknown" });
+      await blockchain.appendEvent({ event: "unlock_failed", detail: e.message || "unknown" });
     } finally {
       setLoading(false);
     }
@@ -290,6 +322,7 @@ async function handleDevUnlock(): Promise<void> {
     setViewingEntryPlain(null);
     setNewEntryText("");
     await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
+    await blockchain.appendEvent({ event: "locked", detail: "user_lock" });
   }
   /* ---------------------------
      One-click verify wrapper (UI-friendly)
@@ -306,6 +339,7 @@ async function handleVerifyNow(): Promise<void> {
     await verifyIntegrity(masterKeyHex);
     // small feedback — the status is visible in the header, so no heavy alert needed.
     await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "manual_integrity_check" });
+    await blockchain.appendEvent({ event: "manual_integrity_check", detail: "user_initiated" });
   } catch (e: any) {
     console.warn("Manual verify failed", e);
     Alert.alert("Verify failed", e?.message || "Unknown error");
@@ -338,6 +372,7 @@ async function handleVerifyNow(): Promise<void> {
       const now = new Date().toISOString();
       setLastVerifiedAt(now);
       await (storage as any).appendTamperLog({ ts: now, event: "integrity_check", detail: `${okCount} ok, ${failCount} fail` });
+      await blockchain.appendEvent({ event: "integrity_check", detail: `${okCount} ok, ${failCount} fail` });
       refreshData();
     } catch (err) {
       console.warn("Integrity check error", err);
@@ -364,6 +399,7 @@ async function handleVerifyNow(): Promise<void> {
       const entry: Entry = { id, iv: ivHex, ciphertext: ciphertextB64, hmac, timestamp: ts };
       await (storage as any).appendEntry(entry);
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
+      await blockchain.appendEvent({ event: "entry_added", detail: `id=${id}` });
       setNewEntryText("");
       setShowNewModal(false);
       refreshData();
@@ -387,16 +423,19 @@ async function handleVerifyNow(): Promise<void> {
     if (!ok) {
       Alert.alert("Integrity failed", "Entry integrity check failed.");
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_integrity_fail", id: entry.id });
+      await blockchain.appendEvent({ event: "entry_integrity_fail", id: entry.id });
       return;
     }
     try {
       const plain = (crypto as any).decryptEntryWithMaster(masterKeyHex, entry);
       setViewingEntryPlain({ id: entry.id, text: plain });
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_viewed", id: entry.id });
+      await blockchain.appendEvent({ event: "entry_viewed", id: entry.id });
     } catch (e) {
       console.error("Decrypt error", e);
       Alert.alert("Error", "Decryption failed.");
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_decrypt_fail", id: entry.id});
+      await blockchain.appendEvent({ event: "entry_decrypt_fail", id: entry.id });
     }
   }
 
@@ -431,6 +470,7 @@ async function handleVerifyNow(): Promise<void> {
         console.warn("Panic wipe incomplete", { checkWrapped, entriesLen: checkEntries.length });
         
         await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wipe_failed", detail: "Data still exists after wipe" });
+        await blockchain.appendEvent({ event: "panic_wipe_failed", detail: "Data still exists after wipe" });
 
       }
       setEntries([]);
@@ -440,6 +480,7 @@ async function handleVerifyNow(): Promise<void> {
     setInitialized(false);
       Alert.alert("Panic wipe complete", "All vault data removed.");
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wiped" });
+      await blockchain.appendEvent({ event: "panic_wiped" });
     } catch (e: any) {
       console.error("Panic wipe failed", e);
       Alert.alert("Error", "Panic wipe failed. " + (e.message || ""));
@@ -468,7 +509,7 @@ async function handleVerifyNow(): Promise<void> {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>VAULT_0xARN∆B</Text>
-          <Text style={styles.subtitle}>Secure Offline Journal — Setup</Text>
+          <Text style={styles.subtitle}>Secure Journal — Setup</Text>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.label}>Create master passphrase</Text>
@@ -492,7 +533,7 @@ async function handleVerifyNow(): Promise<void> {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>VAULT_0xARN∆B</Text>
-          <Text style={styles.subtitle}>Secure Offline Journal</Text>
+          <Text style={styles.subtitle}>Secure Journal</Text>
         </View>
 
         <View style={styles.centered}>
@@ -573,11 +614,12 @@ async function handleVerifyNow(): Promise<void> {
 
           <TouchableOpacity
   style={[styles.buttonSecondary, { marginTop: 12 }]}
-  onPress={handleVerifyNow}
-  disabled={!masterKeyHex || loading}
+  onPress={handleHashVerify}
+  disabled={loading}
 >
   <Text style={styles.buttonText}>HashVerify</Text>
 </TouchableOpacity>
+
 
 
           <TouchableOpacity style={[styles.buttonSecondary, { backgroundColor: "#2a2a2a", borderColor: "#444" }]} onPress={() => setShowPanicConfirm(true)}>

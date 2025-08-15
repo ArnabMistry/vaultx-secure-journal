@@ -15,6 +15,8 @@ import * as ExpoCrypto from "expo-crypto";
 import styles from "../styles";
 import { loadTamperLog } from "../storage";
 import { shortHex } from "../crypto";
+import * as blockchain from "../blockchain";
+// const result = await blockchain.verifyChain();
 
 // Note: expo-sharing is optional in some CI images. Guard usage.
 let Sharing = null;
@@ -119,22 +121,36 @@ export default function AuditModal({ visible, onClose, meta = {}, lastVerifiedAt
   }, [normalized]);
 
   // Refresh log when modal shows
-  useEffect(() => {
-    if (!visible) return;
-    (async () => {
-      try {
-        // Prefer storage loader (your storage.js)
-        const log = await loadTamperLog();
-        setTamperLog(Array.isArray(log) ? log : []);
-        // Reset verification status on open
-        setVerifyStatus(null);
-        setHeadFingerprint(chainHead || "n/a");
-      } catch (e) {
-        setTamperLog([]);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    })();
-  }, [visible]);
+    useEffect(() => {
+      if (!visible) return;
+      (async () => {
+        try {
+          // Load raw tamper log (existing storage)
+          const log = await loadTamperLog();
+          setTamperLog(Array.isArray(log) ? log : []);
+          // Reset verification status on open
+          setVerifyStatus(null);
+  
+          // Prefer blockchain.getHeadFingerprint() when available.
+          if (blockchain && typeof blockchain.getHeadFingerprint === "function") {
+            try {
+              const head = await blockchain.getHeadFingerprint();
+              setHeadFingerprint(head || "n/a");
+            } catch (e) {
+              // fallback to computed chainHead (may be "n/a")
+              setHeadFingerprint(chainHead || "n/a");
+            }
+          } else {
+            setHeadFingerprint(chainHead || "n/a");
+          }
+        } catch (e) {
+          setTamperLog([]);
+          setHeadFingerprint("n/a");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      })();
+    }, [visible]);
+  
 
   // Compute the canonical block hash for an entry using the same blueprint
   // blueprint: seq|ts|event|detail|id|file|hash|signature|prevHash
@@ -154,46 +170,54 @@ export default function AuditModal({ visible, onClose, meta = {}, lastVerifiedAt
   };
 
   // Verify chain function
-  const verifyChain = async () => {
-    setVerifying(true);
-    try {
-      if (!normalized || normalized.length === 0) {
-        setVerifyStatus({ ok: true, breaks: 0, head: null });
-        setHeadFingerprint(null);
-        setVerifying(false);
-        return;
-      }
-
-      // Check SHA-256 availability
-      const test = await sha256Hex("");
-      if (!test) {
+    // Verify chain function - prefer blockchain.verifyChain() if available
+    const verifyChain = async () => {
+      setVerifying(true);
+      try {
+        // If blockchain module present, use its verifyChain (reads storage internally)
+        if (blockchain && typeof blockchain.verifyChain === "function") {
+          const res = await blockchain.verifyChain();
+          // res: { ok, breaks, head, details }
+          setVerifyStatus({ ok: !!res.ok, breaks: res.breaks || 0, head: res.head || null });
+          setHeadFingerprint(res.head || "n/a");
+          return;
+        }
+  
+        // Fallback: verify using normalized array (your previous logic)
+        if (!normalized || normalized.length === 0) {
+          setVerifyStatus({ ok: true, breaks: 0, head: null });
+          setHeadFingerprint(null);
+          return;
+        }
+  
+        // Check SHA-256 availability via ExpoCrypto
+        const test = await sha256Hex("");
+        if (!test) {
+          setVerifyStatus({ ok: false, breaks: normalized.length, head: chainHead });
+          Alert.alert("Verification unavailable", "SHA-256 is not available.");
+          return;
+        }
+  
+        let breaks = 0;
+        let prev = null;
+        for (let i = 0; i < normalized.length; i++) {
+          const r = normalized[i];
+          const computed = await computeBlockHash(r);
+          const prevMatches = (r.prevHash || "") === (prev || "");
+          const blockMatches = (r.blockHash || "") === (computed || "");
+          if (!prevMatches || !blockMatches) breaks++;
+          prev = r.blockHash || computed || null;
+        }
+        setVerifyStatus({ ok: breaks === 0, breaks, head: prev });
+        setHeadFingerprint(prev || null);
+      } catch (e) {
         setVerifyStatus({ ok: false, breaks: normalized.length, head: chainHead });
-        Alert.alert("Verification unavailable", "SHA-256 is not available.");
+        Alert.alert("Verification error", e?.message || String(e));
+      } finally {
         setVerifying(false);
-        return;
       }
-
-      let breaks = 0;
-      let prev = null;
-
-      for (let i = 0; i < normalized.length; i++) {
-        const r = normalized[i];
-        const computed = await computeBlockHash(r);
-        const prevMatches = (r.prevHash || "") === (prev || "");
-        const blockMatches = (r.blockHash || "") === (computed || "");
-        if (!prevMatches || !blockMatches) breaks++;
-        prev = r.blockHash || computed || null;
-      }
-
-      setVerifyStatus({ ok: breaks === 0, breaks, head: prev });
-      setHeadFingerprint(prev || null);
-    } catch (e) {
-      setVerifyStatus({ ok: false, breaks: normalized.length, head: chainHead });
-      Alert.alert("Verification error", e?.message || String(e));
-    } finally {
-      setVerifying(false);
-    }
-  };
+    };
+  
 
   // Export evidence (JSONL + manifest + optional signature file)
   const exportEvidence = async () => {
