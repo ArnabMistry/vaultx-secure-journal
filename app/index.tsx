@@ -25,8 +25,9 @@ import * as storage from "../src/storage";
 import PanicModal from "../src/components/PanicModal";
 import AuditModal from "../src/components/AuditModal";
 import EntryCard from "../src/components/EntryCard";
+import LiveFeed from "../src/components/LiveFeed";
 import * as blockchain from "../src/blockchain";
-
+import KittyLive from "../src/components/KittyLive";
 const PBKDF2_ITERATIONS = 100000;
 
 // DEV unlock for testing purposes
@@ -97,6 +98,7 @@ export default function App(): JSX.Element {
   const [showPanicConfirm, setShowPanicConfirm] = useState<boolean>(false);
   const [panicConfirmText, setPanicConfirmText] = useState<string>("");
 
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -128,20 +130,16 @@ export default function App(): JSX.Element {
   // dev toggle (safe shortcut visible only in development)
 const DEV_UNLOCK_ENABLED = __DEV__;
 
-// quick dev unlock (keeps a dummy 64-char hex so length checks pass)
 async function handleDevUnlock(): Promise<void> {
-  //console.log("🔓 Dev unlock pressed");
-  // fake master key (64 hex chars) so code expecting masterKeyHex length won't immediately fail
   const fakeMaster = "f".repeat(64);
   setMasterKeyHex(fakeMaster);
   setLocked(false);
   setIntegrityStatus("Dev");
   await refreshData();
+  
   try {
-    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "dev_unlocked" });
     await blockchain.appendEvent({ event: "dev_unlocked", detail: "dev" });
   } catch (e) {
-    // ignore storage errors in dev helper
     console.warn("dev unlock log failed", e);
   }
 }
@@ -184,8 +182,8 @@ async function handleHashVerify() {
    
     setIntegrityStatus(res.ok ? "Verified" : "Fail");
     setLastVerifiedAt(new Date().toISOString());
-    
     await (blockchain as any).appendEvent({ event: "integrity_check", detail: `${res.breaks || 0} breaks` });
+    
     
     await refreshData();
   } catch (e) {
@@ -234,7 +232,7 @@ async function handleHashVerify() {
 
       setInitialized(true);
       setLocked(true);
-      Alert.alert("Vault created", "Vault initialized. Remember your passphrase.");
+      //Alert.alert("Vault created", "Vault initialized. Remember your passphrase.");
     } catch (e: any) {
       console.error("Error creating vault:", e);
       Alert.alert("Error", "Failed to initialize vault. " + (e.message || ""));
@@ -400,6 +398,7 @@ async function handleVerifyNow(): Promise<void> {
       await (storage as any).appendEntry(entry);
       await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
       await blockchain.appendEvent({ event: "entry_added", detail: `id=${id}` });
+      
       setNewEntryText("");
       setShowNewModal(false);
       refreshData();
@@ -537,6 +536,15 @@ async function handleVerifyNow(): Promise<void> {
         </View>
 
         <View style={styles.centered}>
+        <KittyLive 
+  boxSize={179}
+  interactive={true}
+  personality={{
+    playfulness: 1,  // More likely to dance and be spontaneous
+    energy: 1        // Faster, more energetic animations
+  }}
+  onTap={() => console.log("Hello Kitty says hi!")}
+/>
           <Text style={styles.smallMuted}>Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text></Text>
           <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
           <Text style={styles.smallMuted}>Offline: Yes</Text>
