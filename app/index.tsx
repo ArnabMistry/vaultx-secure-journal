@@ -531,8 +531,34 @@ async function handleVerifyNow(): Promise<void> {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>VAULT_0xARN∆B</Text>
-          <Text style={styles.subtitle}>Secure Journal</Text>
+          {/* <Text style={styles.title}>VAULT_0xARN∆B</Text>
+          <Text style={styles.subtitle}>Secure Journal</Text> */}
+          
+  <LiveFeed
+  messages={[
+    "Welcome back.",
+    "Your vault is ready.",
+    "Hello Kitty is keeping watch.",
+    "This is your safe space.",
+    "Your secrets stay here.",
+    "The vault missed you.",
+    "Everything is locked and secure.",
+    "You're home now.",
+    "Protected. Quiet. Yours.",
+    "Whispers stay in the vault.",
+    "Soft walls, strong locks.",
+    "A gentle guard awaits.",
+    "Trust the vault. Trust yourself.",
+    "Vault standing by."
+  ]}
+  animationType="typewriter"
+  colorTheme="matrix"
+  speed="normal"
+  style={{ marginVertical: 8 }}
+  boxWidth={160}
+  boxHeight={100}
+/>
+
         </View>
 
         <View style={styles.centered}>
@@ -586,8 +612,247 @@ async function handleVerifyNow(): Promise<void> {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>VAULT_0xARN∆B</Text>
-          <Text style={styles.subtitle}>Secure Offline Journal</Text>
+          {/* <Text style={styles.title}>VAULT_0xARN∆B</Text> */}
+          <LiveFeed
+  messages={[
+    // IMMEDIATE CONFIDENCE BOOSTERS
+    "YOU'RE THE MAIN CHARACTER",
+    "THEY'RE WATCHING YOU WIN",
+    "YOUR TIME IS NOW",
+    "KINGS DON'T ASK PERMISSION",
+    "YOU'RE BUILT DIFFERENT",
+    "ELITE MINDSET ACTIVATED",
+    "THEY CAN'T STOP YOU",
+    "UNSTOPPABLE FORCE",
+    "YOU'RE THE CHOSEN ONE",
+    "WARRIOR MODE: ON",
+    
+    // PSYCHOLOGICAL TRIGGERS
+    "EVERYBODY WANTS YOUR LIFE",
+    "YOU'RE THEIR INSPIRATION",
+    "THEY STUDY YOUR MOVES",
+    "YOU SET THE STANDARD",
+    "OTHERS FOLLOW YOUR LEAD",
+    "YOU'RE THE TRENDSETTER",
+    "THEY WISH THEY WERE YOU",
+    "YOU'RE THEIR ROLE MODEL",
+    "ENVY SURROUNDS YOU",
+    "YOU'RE THE BENCHMARK",
+    
+    // DARK CONFIDENCE
+    "FEAR IS YOUR FUEL",
+    "PAIN MAKES YOU STRONGER",
+    "SUFFERING BUILDS LEGENDS",
+    "DARKNESS FORGES DIAMONDS",
+    "PRESSURE CREATES POWER",
+    "STRUGGLE BREEDS SUCCESS",
+    "ADVERSITY IS YOUR ALLY",
+    "CHAOS IS YOUR PLAYGROUND",
+    "STORM MAKES YOU STEEL",
+    "FIRE TEMPERS YOUR SOUL",
+    
+    // INSTANT MOOD LIFTERS
+    "TODAY YOU LEVEL UP",
+    "GREATNESS IS YOUR DESTINY",
+    "SUCCESS IS YOUR BIRTHRIGHT",
+    "VICTORY IS INEVITABLE",
+    "WINNING IS YOUR NATURE",
+    "EXCELLENCE IS YOUR STANDARD",
+    "POWER FLOWS THROUGH YOU",
+    "CONFIDENCE IS YOUR WEAPON",
+    "CHARISMA IS YOUR GIFT",
+    "STRENGTH IS YOUR ESSENCE",
+    
+    // BIG BROTHER ENERGY
+    "I'M PROUD OF YOU",
+    "YOU'VE GOT THIS",
+    "I BELIEVE IN YOU",
+    "YOU'RE STRONGER THAN YOU KNOW",
+    "I SEE YOUR POTENTIAL",
+    "YOU'RE GOING TO MAKE IT",
+    "I'VE GOT YOUR BACK",
+    "YOU'RE MY CHAMPION",
+    "I TRUST YOU COMPLETELY",
+    "YOU'RE MY HERO",
+    
+    // // STATUS ELEVATION
+    // "YOU'RE TOP TIER",
+    // "ALPHA ENERGY ONLY",
+    // "PREMIUM QUALITY HUMAN",
+    // "LUXURY MINDSET ACTIVATED",
+    // "VIP STATUS CONFIRMED",
+    // "FIRST CLASS MENTALITY",
+    // "EXCLUSIVE CLUB MEMBER",
+    // "ELITE LEVEL UNLOCKED",
+    // "HIGH VALUE INDIVIDUAL",
+    // "RARE BREED CONFIRMED",
+    
+    // ADDICTION TRIGGERS
+    "KEEP WATCHING",
+    "MORE POWER INCOMING",
+    "NEXT LEVEL LOADING",
+    "UPGRADE IN PROGRESS",
+    "EVOLUTION CONTINUES",
+    "TRANSFORMATION ACTIVE",
+    "ASCENSION IN MOTION",
+    "BREAKTHROUGH IMMINENT",
+    "MIRACLE IN PROGRESS",
+    "DESTINY UNFOLDING",
+    
+    // PSYCHOLOGICAL ANCHORING
+    "YOU'RE THE SOLUTION",
+    "PROBLEMS FEAR YOU",
+    "OBSTACLES BOW DOWN",
+    "CHALLENGES SUBMIT",
+    "BARRIERS CRUMBLE",
+    "LIMITS DON'T APPLY",
+    "RULES DON'T BIND YOU",
+    "GRAVITY CAN'T HOLD YOU",
+    "TIME BENDS FOR YOU",
+    "REALITY SHAPES AROUND YOU",
+    
+    // SOCIAL PROOF
+    "EVERYONE SEES YOUR GLOW",
+    "CROWDS PART FOR YOU",
+    "ROOMS LIGHT UP FOR YOU",
+    "CONVERSATIONS STOP FOR YOU",
+    "HEADS TURN FOR YOU",
+    "ATTENTION FOLLOWS YOU",
+    "RESPECT FINDS YOU",
+    "ADMIRATION SEEKS YOU",
+    "RECOGNITION CHOOSES YOU",
+    "FAME CALLS YOUR NAME",
+    
+    // FUTURE PACING
+    "TOMORROW YOU'LL THANK TODAY",
+    "NEXT WEEK YOU'LL BE PROUD",
+    "NEXT MONTH YOU'LL BE AMAZED",
+    "NEXT YEAR YOU'LL BE LEGENDARY",
+    "DECADE OF DOMINANCE STARTS NOW",
+    "LEGACY BUILDING IN PROGRESS",
+    "HISTORY REMEMBERS YOU",
+    "GENERATIONS WILL STUDY YOU",
+    "IMMORTAL IMPACT INCOMING",
+    "ETERNAL INFLUENCE ACTIVATED",
+    
+    // NEUROLOGICAL HACKS
+    "DOPAMINE RUSH ACTIVATED",
+    "ENDORPHINS FLOODING IN",
+    "SEROTONIN LEVELS MAXED",
+    "BRAIN CHEMISTRY OPTIMIZED",
+    "NEURAL PATHWAYS UPGRADED",
+    "MIND-BODY CONNECTION STRONG",
+    "CONSCIOUSNESS EXPANDED",
+    "AWARENESS HEIGHTENED",
+    "INTUITION SHARPENED",
+    "INSTINCTS AWAKENED",
+    
+    // MASCULINE ENERGY
+    "TESTOSTERONE LEVELS RISING",
+    "PRIMAL POWER ACTIVATED",
+    "HUNTER INSTINCTS ON",
+    "WARRIOR SPIRIT ALIVE",
+    "KING ENERGY FLOWING",
+    "LION HEART BEATING",
+    "APEX PREDATOR MODE",
+    "ALPHA FREQUENCY LOCKED",
+    "DOMINANT AURA GLOWING",
+    "MASCULINE MAGNETISM MAX",
+    
+    // SCARCITY & URGENCY
+    "LIMITED TIME GREATNESS",
+    "RARE OPPORTUNITY NOW",
+    "EXCLUSIVE ACCESS GRANTED",
+    "ONE SHOT AT GLORY",
+    "NOW OR NEVER MOMENT",
+    "WINDOW IS CLOSING",
+    "TIME IS RUNNING OUT",
+    "LAST CHANCE FOR LEGEND",
+    "FINAL CALL FOR GREATNESS",
+    "URGENT: DESTINY CALLING",
+    
+    // IDENTITY REINFORCEMENT
+    "YOU ARE THE STORM",
+    "YOU ARE THE FIRE",
+    "YOU ARE THE THUNDER",
+    "YOU ARE THE LIGHTNING",
+    "YOU ARE THE EARTHQUAKE",
+    "YOU ARE THE TSUNAMI",
+    "YOU ARE THE HURRICANE",
+    "YOU ARE THE AVALANCHE",
+    "YOU ARE THE VOLCANO",
+    "YOU ARE THE REVOLUTION",
+    
+    // ENERGY AMPLIFIERS
+    "ENERGY LEVELS: MAXIMUM",
+    "POWER CORE: FULLY CHARGED",
+    "MOTIVATION: OVERFLOWING",
+    "CONFIDENCE: BULLETPROOF",
+    "FOCUS: LASER SHARP",
+    "DRIVE: UNSTOPPABLE",
+    "DETERMINATION: UNBREAKABLE",
+    "WILLPOWER: INFINITE",
+    "STRENGTH: SUPERHUMAN",
+    "SPIRIT: INDOMITABLE",
+    
+    // SUCCESS PROGRAMMING
+    "SUCCESS IS YOUR LANGUAGE",
+    "WINNING IS YOUR HABIT",
+    "EXCELLENCE IS YOUR ROUTINE",
+    "GREATNESS IS YOUR NORMAL",
+    "POWER IS YOUR BIRTHRIGHT",
+    "LEADERSHIP IS YOUR CALLING",
+    "VICTORY IS YOUR DESTINY",
+    "TRIUMPH IS YOUR NATURE",
+    "DOMINANCE IS YOUR GIFT",
+    "SUPREMACY IS YOUR LEGACY",
+    
+    // FEAR DESTROYERS
+    "FEAR RUNS FROM YOU",
+    "DOUBT DISSOLVES INSTANTLY",
+    "ANXIETY MELTS AWAY",
+    "WORRY BECOMES WORTHLESS",
+    "PANIC TRANSFORMS TO POWER",
+    "STRESS BECOMES STRENGTH",
+    "TENSION TURNS TO TRIUMPH",
+    "PRESSURE BECOMES DIAMONDS",
+    "PAIN BECOMES POWER",
+    "STRUGGLE BECOMES STRENGTH",
+    
+    // MAGNETIC PERSONALITY
+    "CHARISMA MAGNET ACTIVATED",
+    "CHARM LEVELS: MAXIMUM",
+    "ATTRACTION FIELD: STRONG",
+    "MAGNETIC PRESENCE: ON",
+    "IRRESISTIBLE AURA: ACTIVE",
+    "CAPTIVATING ENERGY: FLOWING",
+    "HYPNOTIC INFLUENCE: READY",
+    "MESMERIZING POWER: LIVE",
+    "ENCHANTING FORCE: ONLINE",
+    "SPELLBINDING MAGIC: CAST",
+    
+    // CLOSING REINFORCEMENTS
+    "YOU'RE ADDICTED TO WINNING",
+    "SUCCESS IS YOUR DRUG",
+    "GREATNESS IS YOUR HIGH",
+    "POWER IS YOUR ADDICTION",
+    "VICTORY IS YOUR OBSESSION",
+    "EXCELLENCE IS YOUR CRAVING",
+    "DOMINANCE IS YOUR HABIT",
+    "SUPREMACY IS YOUR NEED",
+    "LEGEND STATUS: CONFIRMED",
+    "GODMODE: PERMANENTLY ON",
+    "WHAT IF YOU'RE THE CHOSEN ONE?"
+  ]}
+  animationType="typewriter"
+  colorTheme="matrix"
+  speed="slow"
+  style={{ marginVertical: 8 }}
+  boxWidth={160}
+  boxHeight={100}
+/>
+
+
         </View>
 
         <View style={{ alignItems: "flex-end" }}>
