@@ -128,7 +128,7 @@ export default function App(): JSX.Element {
   }, []);
 
   // dev toggle (safe shortcut visible only in development)
-const DEV_UNLOCK_ENABLED = __DEV__;
+const DEV_UNLOCK_ENABLED = false;
 
 async function handleDevUnlock(): Promise<void> {
   const fakeMaster = "f".repeat(64);
@@ -272,7 +272,7 @@ async function handleHashVerify() {
           const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Vault biometric" });
           if (!res.success) {
             Alert.alert("Biometric failed", "Biometric authentication failed.");
-            await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "biometric_failed" });
+           // await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "biometric_failed" });
             await blockchain.appendEvent({ event: "unlock_failed", detail: "biometric_failed" });
             setLoading(false);
             return;
@@ -286,7 +286,7 @@ async function handleHashVerify() {
         masterHex = (crypto as any).unwrapMasterKey(wrapped, wrapKeyWA, wrapIvHex);
         if (!masterHex || masterHex.length !== 64) throw new Error("Master key length mismatch");
       } catch (e) {
-        await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "wrong_passphrase" });
+       // await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: "wrong_passphrase" });
         await blockchain.appendEvent({ event: "unlock_failed", detail: "wrong_passphrase" });
         Alert.alert("Unlock failed", "Incorrect passphrase.");
         setLoading(false);
@@ -299,12 +299,12 @@ async function handleHashVerify() {
       setUnlockPass("");
       await refreshData();
       await verifyIntegrity(masterHex);
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlocked", detail: "success" });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlocked", detail: "success" });
       await blockchain.appendEvent({ event: "unlocked", detail: "success" });
     } catch (e: any) {
       console.error("Unlock error", e);
       Alert.alert("Error", "Failed to unlock vault. " + (e.message || ""));
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: e.message || "unknown" });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "unlock_failed", detail: e.message || "unknown" });
       await blockchain.appendEvent({ event: "unlock_failed", detail: e.message || "unknown" });
     } finally {
       setLoading(false);
@@ -319,7 +319,7 @@ async function handleHashVerify() {
     setLocked(true);
     setViewingEntryPlain(null);
     setNewEntryText("");
-    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
+    //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "locked", detail: "user_lock" });
     await blockchain.appendEvent({ event: "locked", detail: "user_lock" });
   }
   /* ---------------------------
@@ -336,7 +336,7 @@ async function handleVerifyNow(): Promise<void> {
     // run the existing verify function (it updates integrityStatus + tamper log)
     await verifyIntegrity(masterKeyHex);
     // small feedback — the status is visible in the header, so no heavy alert needed.
-    await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "manual_integrity_check" });
+    //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "manual_integrity_check" });
     await blockchain.appendEvent({ event: "manual_integrity_check", detail: "user_initiated" });
   } catch (e: any) {
     console.warn("Manual verify failed", e);
@@ -581,14 +581,17 @@ async function handleVerifyNow(): Promise<void> {
             <Text style={styles.buttonText}>Unlock Vault</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.buttonSecondary, { marginTop: 12 }]} onPress={async () => {
+          <TouchableOpacity style={[styles.buttonPrimary, { marginTop: 12 }]} onPress={async () => {
             const has = await LocalAuthentication.hasHardwareAsync();
             if (!has) { Alert.alert("Unavailable", "Biometric unavailable."); return; }
             const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Biometric Vault Unlock" });
-            if (res.success) Alert.alert("Biometric OK", "Now enter passphrase to finish unlock.");
+            if (res.success) {
+      setLocked(false);
+      await blockchain.appendEvent({ event: "unlocked", detail: "success" });
+            }
             else Alert.alert("Biometric failed", "Cancelled.");
           }}>
-            <Text style={styles.buttonText}>Use Biometric (requires passphrase)</Text>
+            <Text style={styles.buttonText}>Use Biometric</Text>
           </TouchableOpacity>
           {DEV_UNLOCK_ENABLED && (
 <TouchableOpacity

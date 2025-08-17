@@ -31,6 +31,7 @@
     "expo-router": "~5.1.4",
     "expo-screen-capture": "^7.2.0",
     "expo-secure-store": "~14.2.3",
+    "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.5",
@@ -40,13 +41,13 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-keychain": "^10.0.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5",
-    "expo-sharing": "~13.1.5",
-    "react-native-svg": "15.11.2"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
