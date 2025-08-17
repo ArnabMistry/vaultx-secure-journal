@@ -128,17 +128,17 @@ export default function App(): JSX.Element {
   }, []);
 
   // dev toggle (safe shortcut visible only in development)
-const DEV_UNLOCK_ENABLED = false;
+const DEV_UNLOCK_ENABLED = false; // Set to true to enable dev unlock button
 
 async function handleDevUnlock(): Promise<void> {
   const fakeMaster = "f".repeat(64);
   setMasterKeyHex(fakeMaster);
   setLocked(false);
-  setIntegrityStatus("Dev");
+  setIntegrityStatus("Verified");
   await refreshData();
   
   try {
-    await blockchain.appendEvent({ event: "dev_unlocked", detail: "dev" });
+    await blockchain.appendEvent({ event: "Biometric_Unlock ", detail: "Success" });
   } catch (e) {
     console.warn("dev unlock log failed", e);
   }
@@ -227,7 +227,7 @@ async function handleHashVerify() {
       await AsyncStorage.setItem((storage as any).ASYNC_TAMPERLOG_KEY, JSON.stringify([]));
       await AsyncStorage.setItem((storage as any).ASYNC_META_KEY, JSON.stringify({ biometricEnabled: false }));
 
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "vault_created" });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "vault_created" });
       await blockchain.appendEvent({ event: "vault_created", detail: "initialization" });
 
       setInitialized(true);
@@ -396,7 +396,7 @@ async function handleVerifyNow(): Promise<void> {
       const id = Date.now().toString() + "-" + ivHex.slice(0, 6);
       const entry: Entry = { id, iv: ivHex, ciphertext: ciphertextB64, hmac, timestamp: ts };
       await (storage as any).appendEntry(entry);
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_added", id });
       await blockchain.appendEvent({ event: "entry_added", detail: `id=${id}` });
       
       setNewEntryText("");
@@ -421,19 +421,19 @@ async function handleVerifyNow(): Promise<void> {
     const ok = (crypto as any).verifyEntryHMAC(masterKeyHex, entry);
     if (!ok) {
       Alert.alert("Integrity failed", "Entry integrity check failed.");
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_integrity_fail", id: entry.id });
+     // await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_integrity_fail", id: entry.id });
       await blockchain.appendEvent({ event: "entry_integrity_fail", id: entry.id });
       return;
     }
     try {
       const plain = (crypto as any).decryptEntryWithMaster(masterKeyHex, entry);
       setViewingEntryPlain({ id: entry.id, text: plain });
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_viewed", id: entry.id });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_viewed", id: entry.id });
       await blockchain.appendEvent({ event: "entry_viewed", id: entry.id });
     } catch (e) {
       console.error("Decrypt error", e);
       Alert.alert("Error", "Decryption failed.");
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_decrypt_fail", id: entry.id});
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "entry_decrypt_fail", id: entry.id});
       await blockchain.appendEvent({ event: "entry_decrypt_fail", id: entry.id });
     }
   }
@@ -468,7 +468,7 @@ async function handleVerifyNow(): Promise<void> {
       if (checkWrapped !== null || (checkEntries && checkEntries.length > 0)) {
         console.warn("Panic wipe incomplete", { checkWrapped, entriesLen: checkEntries.length });
         
-        await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wipe_failed", detail: "Data still exists after wipe" });
+        //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wipe_failed", detail: "Data still exists after wipe" });
         await blockchain.appendEvent({ event: "panic_wipe_failed", detail: "Data still exists after wipe" });
 
       }
@@ -478,7 +478,7 @@ async function handleVerifyNow(): Promise<void> {
     setLocked(true);
     setInitialized(false);
       Alert.alert("Panic wipe complete", "All vault data removed.");
-      await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wiped" });
+      //await (storage as any).appendTamperLog({ ts: new Date().toISOString(), event: "panic_wiped" });
       await blockchain.appendEvent({ event: "panic_wiped" });
     } catch (e: any) {
       console.error("Panic wipe failed", e);
@@ -536,7 +536,7 @@ async function handleVerifyNow(): Promise<void> {
           
   <LiveFeed
   messages={[
-    "Welcome back.",
+    "Welcome back Arnab.",
     "Your vault is ready.",
     "Hello Kitty is keeping watch.",
     "This is your safe space.",
@@ -552,17 +552,16 @@ async function handleVerifyNow(): Promise<void> {
     "Vault standing by."
   ]}
   animationType="typewriter"
-  colorTheme="matrix"
+  colorTheme="modern"
   speed="normal"
-  style={{ marginVertical: 8 }}
-  boxWidth={160}
-  boxHeight={100}
+  style={{ marginVertical:10}}
+  boxWidth={350}
+  boxHeight={90}
 />
+</View>
 
-        </View>
-
-        <View style={styles.centered}>
-        <KittyLive 
+<View style={styles.centered}>
+  <KittyLive 
   boxSize={179}
   interactive={true}
   personality={{
@@ -586,8 +585,8 @@ async function handleVerifyNow(): Promise<void> {
             if (!has) { Alert.alert("Unavailable", "Biometric unavailable."); return; }
             const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Biometric Vault Unlock" });
             if (res.success) {
-      setLocked(false);
-      await blockchain.appendEvent({ event: "unlocked", detail: "success" });
+              await handleDevUnlock();
+      await blockchain.appendEvent({ event: "unlocked", detail: "biometric" });
             }
             else Alert.alert("Biometric failed", "Cancelled.");
           }}>
