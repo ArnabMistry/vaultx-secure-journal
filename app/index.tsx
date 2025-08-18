@@ -19,7 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import * as ScreenCapture from "expo-screen-capture";
-import pookieStyles from "../src/pookieStyles";
+// import pookieStyles from "../src/pookieStyles";
 import styles from "../src/styles";
 import * as crypto from "../src/crypto";
 import MeowDetail from "../src/meowdetail";
