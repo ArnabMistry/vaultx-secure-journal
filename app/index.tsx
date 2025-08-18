@@ -13,14 +13,16 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-
+import { Animated, Easing, TextInput as RNTextInput } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import * as ScreenCapture from "expo-screen-capture";
-
+import pookieStyles from "../src/pookieStyles";
 import styles from "../src/styles";
 import * as crypto from "../src/crypto";
+import MeowDetail from "../src/meowdetail";
 import * as storage from "../src/storage";
 import PanicModal from "../src/components/PanicModal";
 import AuditModal from "../src/components/AuditModal";
@@ -29,6 +31,7 @@ import EntryCard from "../src/components/EntryCard";
 import * as blockchain from "../src/blockchain";
 import KittyLive from "../src/components/KittyLive";
 import LiveFeed, { BlackpinkDateTime } from "../src/components/LiveFeed";
+
 const PBKDF2_ITERATIONS = 100000;
 
 // DEV unlock for testing purposes
@@ -98,6 +101,7 @@ export default function App(): JSX.Element {
   const [integrityStatus, setIntegrityStatus] = useState<string>("Unknown");
   const [showPanicConfirm, setShowPanicConfirm] = useState<boolean>(false);
   const [panicConfirmText, setPanicConfirmText] = useState<string>("");
+const [modalVisible, setModalVisible] = useState(false);
 
 
   useEffect(() => {
@@ -601,14 +605,19 @@ async function handleVerifyNow(): Promise<void> {
     <Text style={styles.buttonText}>Skip Unlock (Dev)</Text>
   </TouchableOpacity>
 )}
+<TouchableOpacity 
+  style={[styles.linkButton, { position: 'absolute', bottom: 20 }]} 
+  onPress={() => setModalVisible(true)}
+>
+  <Text style={styles.smallMuted}>Meowcript™</Text>
+</TouchableOpacity>
+<MeowDetail visible={modalVisible} onClose={() => setModalVisible(false)} />
 
-          <TouchableOpacity style={[styles.linkButton]} onPress={() => Alert.alert("Security reminder", "AES-256 & HMAC-SHA256. Device compromise still defeats protection.")}>
-            <Text style={styles.linkText}>Security Details</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
+  
 
   
   return (
@@ -993,7 +1002,14 @@ async function handleVerifyNow(): Promise<void> {
       {/* Panic Modal */}
       <PanicModal visible={showPanicConfirm} onCancel={() => { setShowPanicConfirm(false); setPanicConfirmText(""); }} onConfirm={async () => { setShowPanicConfirm(false); setPanicConfirmText(""); await performPanicWipe(); }} confirmText={panicConfirmText} setConfirmText={setPanicConfirmText} />
 
-      <View style={styles.footer}><Text style={styles.smallMuted}>Offline. Security depends on passphrase and device integrity.</Text></View>
+      {/* <View style={styles.footer}><Text style={styles.smallMuted}>Offline. Security depends on passphrase and device integrity.</Text></View> */}
+      <TouchableOpacity 
+  style={[styles.linkButton, { position: 'absolute', bottom: 20, alignSelf: 'center' }]} 
+  onPress={() => setModalVisible(true)}
+>
+  <Text style={styles.smallMuted}>Meowcript™</Text>
+</TouchableOpacity>
+      <MeowDetail visible={modalVisible} onClose={() => setModalVisible(false)} />
     </SafeAreaView>
   );
 }

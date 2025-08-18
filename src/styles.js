@@ -156,5 +156,6 @@ export default StyleSheet.create({
     fontSize: 13,
     textDecorationLine: "underline",
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace"
-  }
+  },
+  
 });
