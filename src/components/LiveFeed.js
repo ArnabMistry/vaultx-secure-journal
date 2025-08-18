@@ -97,14 +97,26 @@ const COLOR_THEMES = {
   },
   
   // Clean modern
-  modern: {
-    background: "#1e1e1e",
-    border: "#444444",
-    primaryText: "#ffffff",
-    secondaryText: "#888888",
-    cursor: "#007acc",
-    accent: "#4fc3f7"
+  modern: { background: "#1e1e1e", border: "#444444", primaryText: "#ffffff", secondaryText: "#888888", cursor: "#007acc", accent: "#4fc3f7" },
+
+  bp: {
+    background: "#000000",      // deep black background
+    border: "#2a2a2a",          // subtle dark border
+    primaryText: "#ff69b4",     // bright pink for main text
+    secondaryText: "#f5a9d6",   // softer light pink for secondary text
+    cursor: "#ff4da6",          // vibrant hot pink cursor
+    accent: "#ff1493"           // strong neon pink accent
+  },
+
+  blackpink: {
+    background: "#1a1a2e",      // deep midnight blue
+    border: "#fc46aa",          // vivid pink
+    primaryText: "#fc46aa",     // Blackpink pink
+    secondaryText: "#fff",      // white
+    cursor: "#fff",             // white (for cursors)
+    accent: "#0ed1d9"           // blue accent (optional)
   }
+  
 };
 
 // ========================================
@@ -201,6 +213,68 @@ const MarqueeAnimation = ({ text, theme, speed }) => {
     </View>
   );
 };
+
+/**
+ * 🖤💖 Blackpink Date/Time Display
+ * Renders current date/time in Blackpink style.
+ * Props:
+ *   mode: "date", "time", or "datetime"
+ *   style: additional styles you may want to add
+ */
+export function BlackpinkDateTime({ mode = "datetime", style = {} }) {
+    // Helper to format date/time
+    function getFormatted() {
+      const now = new Date();
+      if (mode === "date") {
+        return now.toLocaleDateString();
+      }
+      if (mode === "time") {
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+      // Default: show both
+      return (
+        now.toLocaleDateString() +
+        " " +
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      );
+    }
+  
+    const [display, setDisplay] = useState(getFormatted());
+    useEffect(() => {
+      // update every second for live time
+      const timer = setInterval(() => setDisplay(getFormatted()), 1000);
+      return () => clearInterval(timer);
+    }, [mode]);
+  
+    return (
+      <View
+        style={{
+          paddingVertical: 6,
+          paddingHorizontal: 12,
+          backgroundColor: "#1a1a2e",
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: "#fc46aa",
+          alignSelf: "center",
+          marginVertical: 8,
+          ...style
+        }}
+      >
+        <Text
+          style={{
+            color: "#fc46aa",
+            fontSize: 14,
+            fontFamily: "monospace",
+            fontWeight: "bold",
+            letterSpacing: 1.5,
+          }}
+        >
+          {display}
+        </Text>
+      </View>
+    );
+  }
+  
 
 /**
  * ✨ Fade Effect

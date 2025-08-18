@@ -25,9 +25,10 @@ import * as storage from "../src/storage";
 import PanicModal from "../src/components/PanicModal";
 import AuditModal from "../src/components/AuditModal";
 import EntryCard from "../src/components/EntryCard";
-import LiveFeed from "../src/components/LiveFeed";
+// import LiveFeed from "../src/components/LiveFeed";
 import * as blockchain from "../src/blockchain";
 import KittyLive from "../src/components/KittyLive";
+import LiveFeed, { BlackpinkDateTime } from "../src/components/LiveFeed";
 const PBKDF2_ITERATIONS = 100000;
 
 // DEV unlock for testing purposes
@@ -530,7 +531,7 @@ async function handleVerifyNow(): Promise<void> {
   if (locked) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View>
           {/* <Text style={styles.title}>VAULT_0xARN∆B</Text>
           <Text style={styles.subtitle}>Secure Journal</Text> */}
           
@@ -552,9 +553,9 @@ async function handleVerifyNow(): Promise<void> {
     "Vault standing by."
   ]}
   animationType="typewriter"
-  colorTheme="modern"
+  colorTheme="bp"
   speed="normal"
-  style={{ marginVertical:10}}
+  style={{ marginVertical:20, marginHorizontal: 20}}
   boxWidth={350}
   boxHeight={90}
 />
@@ -570,13 +571,14 @@ async function handleVerifyNow(): Promise<void> {
   }}
   onTap={() => console.log("Hello Kitty says hi!")}
 />
+<BlackpinkDateTime mode="time" />
           <Text style={styles.smallMuted}>Vault status: <Text style={{ color: "#ff9b9b" }}>Locked</Text></Text>
-          <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
-          <Text style={styles.smallMuted}>Offline: Yes</Text>
+          {/* <Text style={styles.smallMuted}>Integrity: {integrityStatus}</Text>
+          <Text style={styles.smallMuted}>Offline: Yes</Text> */}
 
           <TextInput placeholder="Enter passphrase" placeholderTextColor="#3a6757" secureTextEntry value={unlockPass} onChangeText={setUnlockPass} style={[styles.input, { marginTop: 20, width: "90%" }]} />
 
-          <TouchableOpacity style={styles.buttonPrimary} onPress={handleUnlock}>
+          <TouchableOpacity style={[styles.buttonPrimary, { marginTop: 12 }]} onPress={handleUnlock}>
             <Text style={styles.buttonText}>Unlock Vault</Text>
           </TouchableOpacity>
 
@@ -586,7 +588,6 @@ async function handleVerifyNow(): Promise<void> {
             const res = await LocalAuthentication.authenticateAsync({ promptMessage: "Biometric Vault Unlock" });
             if (res.success) {
               await handleDevUnlock();
-      await blockchain.appendEvent({ event: "unlocked", detail: "biometric" });
             }
             else Alert.alert("Biometric failed", "Cancelled.");
           }}>
@@ -615,6 +616,7 @@ async function handleVerifyNow(): Promise<void> {
       <View style={styles.headerRow}>
         <View>
           {/* <Text style={styles.title}>VAULT_0xARN∆B</Text> */}
+          {/* <BlackpinkDateTime mode="time" /> */}
           <LiveFeed
   messages={[
     // IMMEDIATE CONFIDENCE BOOSTERS
@@ -847,9 +849,9 @@ async function handleVerifyNow(): Promise<void> {
     "WHAT IF YOU'RE THE CHOSEN ONE?"
   ]}
   animationType="typewriter"
-  colorTheme="matrix"
-  speed="slow"
-  style={{ marginVertical: 8 }}
+  colorTheme="bp"
+  speed="normal"
+  style={{ marginVertical: 8}}
   boxWidth={160}
   boxHeight={100}
 />
@@ -905,7 +907,7 @@ async function handleVerifyNow(): Promise<void> {
   <Text style={styles.smallMuted}>Last verified: {lastVerifiedAt || "never"}</Text>
   <Text style={styles.smallMuted}>Tamper log ({tamperLog.length})</Text>
 
-  <ScrollView style={{ maxHeight: 300, marginTop: 6, backgroundColor: "#010a0b", padding: 8, borderRadius: 4 }}>
+  <ScrollView style={{ maxHeight: 155, marginTop: 6, backgroundColor: "#010a0b", padding: 8, borderRadius: 4 }}>
     {tamperLog.slice(0, 30).map((log, idx) => {
       const { date, time } = rfc3339Parts(log.ts);
       const sev = severityFor(log.event, log.detail);
@@ -947,12 +949,8 @@ async function handleVerifyNow(): Promise<void> {
         </View>
 
         <View style={styles.colRight}>
-          <Text style={styles.sectionTitle}>Entries (append-only)</Text>
-          {entries.length === 0 ? (
-            <View style={styles.emptyBox}><Text style={styles.smallMuted}>Click on New Entry</Text></View>
-          ) : (
+          {/* <Text style={styles.sectionTitle}>Entries (append-only)</Text> */}
             <FlatList data={entries} keyExtractor={(item) => item.id} renderItem={({ item }) => <EntryCard item={item} onView={handleViewEntry} />} />
-          )}
         </View>
       </View>
 

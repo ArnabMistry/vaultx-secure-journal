@@ -34,7 +34,12 @@ export default StyleSheet.create({
   },
 
   content: { padding: 20 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ translateY: -70 }], 
+  },
   smallMuted: {
     color: "#7aa78f",
     fontSize: 12,
