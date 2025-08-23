@@ -1,32 +1,30 @@
 // app/index.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
+import * as ScreenCapture from "expo-screen-capture";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Platform,
   SafeAreaView,
-  View,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Modal,
-  Alert,
-  Platform,
-  FlatList,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Animated, Easing, TextInput as RNTextInput } from "react-native";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as LocalAuthentication from "expo-local-authentication";
-import * as SecureStore from "expo-secure-store";
-import * as ScreenCapture from "expo-screen-capture";
 // import pookieStyles from "../src/pookieStyles";
-import styles from "../src/styles";
+import AuditModal from "../src/components/AuditModal";
+import EntryCard from "../src/components/EntryCard";
+import PanicModal from "../src/components/PanicModal";
 import * as crypto from "../src/crypto";
 import MeowDetail from "../src/meowdetail";
 import * as storage from "../src/storage";
-import PanicModal from "../src/components/PanicModal";
-import AuditModal from "../src/components/AuditModal";
-import EntryCard from "../src/components/EntryCard";
+import styles from "../src/styles";
 // import LiveFeed from "../src/components/LiveFeed";
 import * as blockchain from "../src/blockchain";
 import KittyLive from "../src/components/KittyLive";

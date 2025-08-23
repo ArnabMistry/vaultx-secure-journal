@@ -4,7 +4,6 @@ export default function Layout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       {/* Existing structure is intact */}
-      
     </Stack>
   );
 }
