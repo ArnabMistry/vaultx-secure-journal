@@ -5,6 +5,17 @@ VaultX — Secure Offline Presidential Vault
 Designed for storing extremely sensitive notes where privacy, auditable integrity, and controlled destruction (panic wipe) are required.
 
 ---
+## 📸 App UI Screenshots
+
+<p align="center">
+  <img src="./screenshots/lockscreen.jpg" alt="Lock Screen" width="45%" />
+  <img src="./screenshots/mainscreen.jpg" alt="Home Screen" width="45%" />
+</p>
+
+<p align="center">
+  <img src="./screenshots/auditlog.jpg" alt="Audit Log" width="45%" />
+</p>
+
 
 ## Overview
 
@@ -19,6 +30,38 @@ VaultX provides:
 - Tamper log / audit view so the user (or auditor) can verify the vault state and operations.
 
 VaultX focuses on transparency and realism: what the UI shows is real cryptographic state (hashes, HMAC previews, timestamps), not fake animations.
+
+---
+
+### 🔐 Meowcript™ – Security Layer
+
+**Meowcript™** is a proprietary encryption layer designed by **Arnab Mistry**.  
+Its purpose is to protect sensitive information with uncompromising security standards, ensuring that even highly critical data (such as financial records, legal documents, or classified information) remains safe.
+
+#### Core Principles
+- **End-to-End Encryption** – Data is encrypted before transmission and decrypted only on the recipient’s device.  
+- **AES-256 Encryption** – Industry-standard symmetric encryption for maximum strength.  
+- **HMAC-SHA256 Integrity Checks** – Prevents tampering and ensures message authenticity.  
+- **Forward Secrecy (Planned)** – Future implementation will ensure new keys per session.  
+
+#### Threat Model
+Meowcript™ protects against:
+- Interception of communication  
+- Unauthorized access attempts  
+- Data tampering or replay attacks  
+
+**Note**: Like any cryptographic system, if the device itself is compromised, protection cannot be guaranteed. Meowcript™ assumes a trusted execution environment.  
+
+#### Use Cases
+- Secure messaging  
+- Protecting confidential app data  
+- Shielding personal notes and archives  
+- Any use case requiring **trustworthy encryption with legal-grade compliance**  
+
+---
+
+Meowcript™ is currently in its **foundation phase**, with algorithm design and security planning completed.  
+Future updates will expand its cryptographic features and developer-facing APIs.
 
 ---
 
